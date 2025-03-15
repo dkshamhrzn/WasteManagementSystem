@@ -3,7 +3,7 @@ const axios = require('axios');
 const API_URL = 'http://localhost:5001/login'; // Your API endpoint
 
 const runLoginTests = async () => {
-    console.log("🚀 Running login tests...\n");
+    console.log("Running login tests...\n");
 
     // Test Valid Login
     try {
