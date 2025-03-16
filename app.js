@@ -1,11 +1,17 @@
 const express = require("express");
-const mongoose = require("mongoose"); 
+const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const cors = require("cors");  // Import the cors package
 const Role = require("./models/UserRoleSchema");
-const signupRouter = require("./routes/Signup");  // Import the signup route
-const loginRouter = require("./routes/Login");  // Import the signup route
+const signupRouter = require("./routes/Signup");
+const loginRouter = require("./routes/Login");
 
 const app = express();
+
+// Enable CORS for all routes
+app.use(cors());
+
+// Parse incoming JSON requests
 app.use(bodyParser.json());
 
 const mongooseURL = "mongodb+srv://wastewise:BdvheLPluzRPwfxr@cluster0.5r3mk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
@@ -38,9 +44,9 @@ mongoose.connect(mongooseURL)
     })
     .catch((err) => console.log("MongoDB connection error:", err));
 
-// Use the signup route
-app.use('/signup', signupRouter);  // Now the signup route should be accessible at http://localhost:5001/signup
-app.use('/login', loginRouter);  // Now the signup route should be accessible at http://localhost:5001/signup
+// Use the signup and login routes
+app.use('/signup', signupRouter);
+app.use('/login', loginRouter);
 
 // Start the server
 app.listen(5001, () => {
