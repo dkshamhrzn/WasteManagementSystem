@@ -41,6 +41,15 @@ const userSchema = new mongoose.Schema({
     verificationStatus: {
         type: Boolean,
         default: false,
+    },
+    // Fields for password reset functionality
+    resetToken: {
+        type: String,
+        default: null,
+    },
+    resetTokenExpiration: {
+        type: Date,
+        default: null,
     }
 });
 
@@ -48,3 +57,4 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;
+ 

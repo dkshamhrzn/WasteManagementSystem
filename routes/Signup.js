@@ -13,7 +13,7 @@ router.post("/", async (req, res) => {  // Change the route here to handle POST 
 
         if (!full_name || !email || !phone_number || !password || !address || !role_name) {
             return res.status(400).json({ message: "All fields are required" });
-        }
+        } 
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
