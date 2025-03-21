@@ -17,6 +17,7 @@ app.use(cors());
 // Parse incoming JSON requests
 app.use(bodyParser.json());
 
+// fix
 const mongooseURL = "mongodb+srv://wastewise:BdvheLPluzRPwfxr@cluster0.5r3mk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 mongoose.connect(mongooseURL) 

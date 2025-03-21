@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
     },
     verificationStatus: {
         type: Boolean,
-        default: false,
+        default: false, 
     },
     // Fields for password reset functionality
     resetToken: {

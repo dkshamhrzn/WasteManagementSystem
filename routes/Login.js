@@ -22,7 +22,6 @@ router.post("/", async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // Return user info without JWT
         res.status(200).json({
             message: "Login successful",
             user: {
