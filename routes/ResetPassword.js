@@ -16,20 +16,20 @@ router.post("/reset-password", async (req, res) => {
         // Find user with valid reset token and not expired
         const user = await User.findOne({
             resetToken: token,
-            resetTokenExpiration: { $gt: Date.now() },
+            resetTokenExpiration: { $gt: Date.now() }, // Check if the token is expired
         });
 
         if (!user) {
             return res.status(400).json({ message: "Invalid or expired token" });
         }
 
-        // Hash new password
+        // Hash the new password
         const hashedPassword = await bcrypt.hash(password, 10);
         user.password = hashedPassword;
         user.resetToken = undefined; // Clear the reset token after use
         user.resetTokenExpiration = undefined; // Clear expiration date
 
-        // Save updated user
+        // Save the updated user
         await user.save();
         res.json({ message: "Password reset successful" });
 
