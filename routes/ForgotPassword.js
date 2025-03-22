@@ -17,7 +17,7 @@ router.post("/", async (req, res) => {
         }
 
         // Generate a secure reset token
-        const token = crypto.randomBytes(32).toString("hex");
+        const token = crypto.randomInt(100000, 999999).toString();
         user.resetToken = token;
         user.resetTokenExpiration = Date.now() + 3600000; // Token valid for 1 hour
         await user.save();
