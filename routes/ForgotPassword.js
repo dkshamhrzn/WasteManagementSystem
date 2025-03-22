@@ -23,7 +23,7 @@ router.post("/", async (req, res) => {
 
         // Setup Nodemailer transport using environment variables
         const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST, // Use Mailtrap or SMTP service
+            host: process.env.EMAIL_HOST,
             port: process.env.EMAIL_PORT,
             auth: {
                 user: process.env.EMAIL_USER,
@@ -31,28 +31,27 @@ router.post("/", async (req, res) => {
             },
         });
 
-        // Send email with reset link
-        const resetLink = `http://wastewise-app.onrender.com/reset-password/${token}`;
+        // Send email with reset token
         const mailOptions = {
-            from: `"Support Team" <no-reply@wastewise.com>`, // Use a proper sender email
+            from: `"Support Team" <no-reply@wastewise.com>`,
             to: user.email,
             subject: "Password Reset Request",
             html: `<p>Hello,</p>
-                   <p>We received a request to reset your password. Click the link below to reset it:</p>
-                   <p><a href="${resetLink}">Reset Password</a></p>
+                   <p>We received a request to reset your password. Use the token below to reset it:</p>
+                   <p><strong>Reset Token: ${token}</strong></p>
+                   <p>Enter this token in the app to reset your password.</p>
                    <p>If you did not request this, please ignore this email.</p>`,
         };
 
         // Send email
         await transporter.sendMail(mailOptions);
 
-        res.json({ message: "Reset link sent to your email" });
+        res.json({ message: "Reset token sent to your email" });
     } catch (error) {
-        console.error("Error processing password reset:", error.message); // Print the error message
-        console.error("Error stack trace:", error.stack); // Print the full stack trace
+        console.error("Error processing password reset:", error.message);
         res.status(500).json({
             message: "Internal server error",
-            error: error.message,  // Return the error message in the response for easier debugging
+            error: error.message,
         });
     }
 });

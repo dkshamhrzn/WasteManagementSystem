@@ -4,9 +4,8 @@ const User = require("../models/UserDetailsSchema");
 
 const router = express.Router();
 
-router.post("/:token", async (req, res) => {
-    const { token } = req.params;
-    const { password, confirmPassword } = req.body;
+router.post("/reset-password", async (req, res) => {
+    const { token, password, confirmPassword } = req.body;
 
     try {
         // Check if passwords match
@@ -27,8 +26,8 @@ router.post("/:token", async (req, res) => {
         // Hash new password
         const hashedPassword = await bcrypt.hash(password, 10);
         user.password = hashedPassword;
-        user.resetToken = undefined;
-        user.resetTokenExpiration = undefined;
+        user.resetToken = undefined; // Clear the reset token after use
+        user.resetTokenExpiration = undefined; // Clear expiration date
 
         // Save updated user
         await user.save();
