@@ -1,3 +1,4 @@
+// routes/ForgotPassword.js
 const express = require("express");
 const crypto = require("crypto");
 const User = require("../models/UserDetailsSchema");
@@ -15,8 +16,8 @@ router.post("/", async (req, res) => {
             return res.status(400).json({ message: "User not found" });
         }
 
-        // Generate a numeric reset token (e.g., 10-digit number)
-        const token = crypto.randomBytes(4).readUInt32BE(0).toString(); // 10-digit number
+        // Generate a secure reset token
+        const token = crypto.randomBytes(32).toString("hex");
         user.resetToken = token;
         user.resetTokenExpiration = Date.now() + 3600000; // Token valid for 1 hour
         await user.save();
