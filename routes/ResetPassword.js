@@ -1,4 +1,3 @@
-// routes/ResetPassword.js
 const express = require("express");
 const bcrypt = require("bcrypt");
 const User = require("../models/UserDetailsSchema");
@@ -14,7 +13,7 @@ router.post("/", async (req, res) => {
             return res.status(400).json({ message: "Passwords do not match" });
         }
 
-        // Find user with valid reset token and not expired
+        // Find user with a valid token that is not expired
         const user = await User.findOne({
             resetToken: token,
             resetTokenExpiration: { $gt: Date.now() },
@@ -27,10 +26,12 @@ router.post("/", async (req, res) => {
         // Hash new password
         const hashedPassword = await bcrypt.hash(password, 10);
         user.password = hashedPassword;
-        user.resetToken = undefined; // Clear the reset token after use
-        user.resetTokenExpiration = undefined; // Clear expiration date
 
-        // Save updated user
+        // Clear reset token fields
+        user.resetToken = undefined;
+        user.resetTokenExpiration = undefined;
+
+        // Save the updated user
         await user.save();
         res.json({ message: "Password reset successful" });
 

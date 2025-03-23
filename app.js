@@ -8,6 +8,7 @@ const signupRouter = require("./routes/Signup");
 const loginRouter = require("./routes/Login");
 const forgotPasswordRouter = require("./routes/ForgotPassword");
 const resetPasswordRouter = require("./routes/ResetPassword");
+const otpVerificationRouter = require("./routes/otpVerification");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/signup', signupRouter);
 app.use('/login', loginRouter);
 app.use("/forgot-password", forgotPasswordRouter);
 app.use("/reset-password", resetPasswordRouter);
+app.use("/api/verify-otp", otpVerificationRouter);
 
 // Start the server
 app.listen(5001, () => {
