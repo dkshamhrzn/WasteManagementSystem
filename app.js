@@ -53,7 +53,7 @@ app.use('/signup', signupRouter);
 app.use('/login', loginRouter);
 app.use("/forgot-password", forgotPasswordRouter);
 app.use("/reset-password", resetPasswordRouter);
-app.use("/api/verify-otp", otpVerificationRouter);
+app.use("/verify-otp", otpVerificationRouter);
 
 // Start the server
 app.listen(5001, () => {
