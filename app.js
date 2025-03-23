@@ -9,6 +9,7 @@ const loginRouter = require("./routes/Login");
 const forgotPasswordRouter = require("./routes/ForgotPassword");
 const resetPasswordRouter = require("./routes/ResetPassword");
 const otpVerificationRouter = require("./routes/otpVerification");
+const truckSchedulesRoutes = require("./routes/truckSchedules");
 
 const app = express();
 
@@ -54,6 +55,8 @@ app.use('/login', loginRouter);
 app.use("/forgot-password", forgotPasswordRouter);
 app.use("/reset-password", resetPasswordRouter);
 app.use("/verify-otp", otpVerificationRouter);
+app.use("/truck-schedules", truckSchedulesRoutes);
+
 
 // Start the server
 app.listen(5001, () => {
