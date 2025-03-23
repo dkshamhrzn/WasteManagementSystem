@@ -12,10 +12,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET a specific truck schedule by ID
-router.get("/:id", async (req, res) => {
+// GET a specific truck schedule by truckNumber
+router.get("/:truckNumber", async (req, res) => {
   try {
-    const schedule = await TruckSchedule.findById(req.params.id);
+    const schedule = await TruckSchedule.findOne({ truckNumber: req.params.truckNumber });
     if (!schedule)
       return res.status(404).json({ message: "Schedule not found" });
     res.json(schedule);
@@ -37,10 +37,10 @@ router.post("/", async (req, res) => {
 });
 
 // PUT (Update) an existing truck schedule
-router.put("/:id", async (req, res) => {
+router.put("/:truckNumber", async (req, res) => {
   try {
-    const updatedSchedule = await TruckSchedule.findByIdAndUpdate(
-      req.params.id,
+    const updatedSchedule = await TruckSchedule.findOneAndUpdate(
+      { truckNumber: req.params.truckNumber },
       req.body,
       { new: true }
     );
@@ -53,9 +53,9 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE a truck schedule
-router.delete("/:id", async (req, res) => {
+router.delete("/:truckNumber", async (req, res) => {
   try {
-    const deletedSchedule = await TruckSchedule.findByIdAndDelete(req.params.id);
+    const deletedSchedule = await TruckSchedule.findOneAndDelete({ truckNumber: req.params.truckNumber });
     if (!deletedSchedule)
       return res.status(404).json({ message: "Schedule not found" });
     res.json({ message: "Schedule deleted successfully" });
