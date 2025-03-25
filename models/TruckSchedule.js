@@ -1,14 +1,13 @@
 const mongoose = require("mongoose");
 
-const scheduleSchema = new mongoose.Schema({
-  Day: { type: String, required: true },
-  Assignment: { type: String, required: true }
-});
-
 const truckScheduleSchema = new mongoose.Schema({
-  truckNumber: { type: Number, required: true, unique: true },
-  truckType: { type: String, required: true },
-  schedule: [scheduleSchema]
+    day: { type: String, required: true },
+    wasteType: { type: String },
+    time: { type: String },
+    date: { type: String, required: true },
+    status: { type: String, required: true },
 });
 
-module.exports = mongoose.model("TruckSchedule", truckScheduleSchema);
+const TruckSchedule = mongoose.model("TruckSchedule", truckScheduleSchema);
+
+module.exports = TruckSchedule;

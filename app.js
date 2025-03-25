@@ -1,4 +1,3 @@
-// app.js
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
@@ -10,6 +9,7 @@ const forgotPasswordRouter = require("./routes/ForgotPassword");
 const resetPasswordRouter = require("./routes/ResetPassword");
 const otpVerificationRouter = require("./routes/otpVerification");
 const truckSchedulesRoutes = require("./routes/truckSchedules");
+const TruckSchedule = require("./models/TruckSchedule"); // Import the TruckSchedule model
 
 const app = express();
 
@@ -46,6 +46,40 @@ mongoose.connect(mongooseURL)
                 console.log("Driver role created.");
             }
         });
+
+        // Check if the truckSchedules collection exists and insert sample data if not
+        TruckSchedule.countDocuments()
+            .then(count => {
+                if (count === 0) {
+                    // Insert the sample data into the truckSchedules collection
+                    TruckSchedule.insertMany([
+                        {
+                            "day": "sunday",
+                            "wasteType": "Biodegradable",
+                            "time": "8 AM",
+                            "date": "2025-03-24",
+                            "status": "Scheduled"
+                        },
+                        {
+                            "day": "monday",
+                            "wasteType": "Non Biodegradable",
+                            "time": "8 AM",
+                            "date": "2025-03-26",
+                            "status": "Scheduled"
+                        },
+                        {
+                            "day": "friday",
+                            "wasteType": "Recyclable",
+                            "time": "8 AM",
+                            "date": "2025-03-29",
+                            "status": "Scheduled"
+                        }
+                    ])
+                    .then(() => console.log("Sample truck schedules inserted."))
+                    .catch(err => console.log("Error inserting sample truck schedules:", err));
+                }
+            })
+            .catch(err => console.log("Error counting documents in truckSchedules:", err));
     })
     .catch((err) => console.log("MongoDB connection error:", err));
 
@@ -57,8 +91,7 @@ app.use("/reset-password", resetPasswordRouter);
 app.use("/verify-otp", otpVerificationRouter);
 app.use("/truck-schedules", truckSchedulesRoutes);
 
-
 // Start the server
 app.listen(5001, () => {
     console.log("Server running on port 5001");
-});
+}); 

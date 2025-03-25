@@ -1,67 +1,61 @@
 const express = require("express");
+const moment = require("moment");
 const router = express.Router();
 const TruckSchedule = require("../models/TruckSchedule");
 
-// GET all truck schedules
-router.get("/", async (req, res) => {
+const calculateScheduleStatus = (schedule) => {
+  const currentDate = moment(); // Current time
+  const scheduleDate = moment(schedule.date, "YYYY-MM-DD");
+  const pickupTime = moment(schedule.date + " " + schedule.time, "YYYY-MM-DD h A"); // Pickup time
+  const noonTime = scheduleDate.clone().hour(12).minute(0).second(0); // 12 PM of schedule day
+
+  let status = "Scheduled"; // Default status
+
+  // If the current date is past the scheduled date, mark as "Completed"
+  if (currentDate.isAfter(scheduleDate, "day")) {
+    status = "Completed";
+  } 
+  // If today is the schedule day but it's after 12 PM, also mark as "Completed"
+  else if (currentDate.isSame(scheduleDate, "day") && currentDate.isSameOrAfter(noonTime)) {
+    status = "Completed";
+  } 
+  // If today is the schedule day but before 12 PM, mark as "Today's Collection"
+  else if (currentDate.isSame(scheduleDate, "day") && currentDate.isBefore(noonTime)) {
+    status = "Today's Collection";
+  }
+
+  return status;
+};
+
+// Function to update schedule status dynamically and handle date change
+const updateScheduleStatus = async () => {
   try {
     const schedules = await TruckSchedule.find();
-    res.json(schedules);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+    schedules.forEach(async (schedule) => {
+      // Check if the schedule date is in the past and update it to the next week
+      const currentDate = moment();
+      const scheduleDate = moment(schedule.date, "YYYY-MM-DD");
+      
+      if (currentDate.isAfter(scheduleDate, "day")) {
+        // Update the date to the same day next week
+        const updatedDate = scheduleDate.add(1, 'week').format("YYYY-MM-DD");
+        schedule.date = updatedDate;  // Update the schedule with the new date
+      }
 
-// GET a specific truck schedule by truckNumber
-router.get("/:truckNumber", async (req, res) => {
-  try {
-    const schedule = await TruckSchedule.findOne({ truckNumber: req.params.truckNumber });
-    if (!schedule)
-      return res.status(404).json({ message: "Schedule not found" });
-    res.json(schedule);
+      const updatedStatus = calculateScheduleStatus(schedule);
+      if (schedule.status !== updatedStatus) {
+        schedule.status = updatedStatus;
+        await schedule.save();  // Save the updated status and potentially the new date
+        console.log(`Schedule with wasteType: ${schedule.wasteType} updated to status: ${updatedStatus} and date: ${schedule.date}`);
+      }
+    });
+    console.log("Schedule statuses and dates updated successfully.");
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.log("Error updating schedule statuses:", error);
   }
-});
+};
 
-// POST (Create) a new truck schedule
-router.post("/", async (req, res) => {
-  const { truckNumber, truckType, schedule } = req.body;
-  const newSchedule = new TruckSchedule({ truckNumber, truckType, schedule });
-  try {
-    const savedSchedule = await newSchedule.save();
-    res.status(201).json(savedSchedule);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// PUT (Update) an existing truck schedule
-router.put("/:truckNumber", async (req, res) => {
-  try {
-    const updatedSchedule = await TruckSchedule.findOneAndUpdate(
-      { truckNumber: req.params.truckNumber },
-      req.body,
-      { new: true }
-    );
-    if (!updatedSchedule)
-      return res.status(404).json({ message: "Schedule not found" });
-    res.json(updatedSchedule);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// DELETE a truck schedule
-router.delete("/:truckNumber", async (req, res) => {
-  try {
-    const deletedSchedule = await TruckSchedule.findOneAndDelete({ truckNumber: req.params.truckNumber });
-    if (!deletedSchedule)
-      return res.status(404).json({ message: "Schedule not found" });
-    res.json({ message: "Schedule deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// Set an interval to update schedule status every minute (60000 ms)
+setInterval(updateScheduleStatus, 60000);
 
 module.exports = router;
