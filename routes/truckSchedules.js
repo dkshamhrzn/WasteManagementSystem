@@ -62,7 +62,7 @@ const updateScheduleStatus = async () => {
 setInterval(updateScheduleStatus, 60000);
 
 // GET all truck schedules, with optional filtering by day(s)
-router.get("/", async (req, res) => {
+router.get("/all-schedules", async (req, res) => {
   try {
     let filter = {};
     if (req.query.days) {
