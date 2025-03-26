@@ -89,21 +89,6 @@ router.get("/wasteType/:wasteType", async (req, res) => {
     }
   });
   
-  // GET a specific truck schedule by id
-  router.get("/id/:id", async (req, res) => {
-      try {
-        const schedule = await TruckSchedule.findById(req.params.id);  // Using findById to find by ID
-    
-        if (!schedule) {
-          return res.status(404).json({ message: "Schedule not found for the given ID" });
-        }
-    
-        res.json(schedule);
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-  });
-  
   
 // POST (Create) a new truck schedule
 router.post("/", async (req, res) => {
