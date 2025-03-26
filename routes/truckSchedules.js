@@ -87,7 +87,7 @@ const updateSaturdaySchedule = async (schedule) => {
   
 
 // Set an interval to update schedule status every minute (60000 ms)
-setInterval(updateScheduleStatus, 6000);
+setInterval(updateScheduleStatus, 60000);
 
 // GET all truck schedules, with optional filtering by day(s)
 // e.g., GET /?days=sunday,monday
@@ -148,17 +148,20 @@ router.put("/:wasteType", async (req, res) => {
   }
 });
 
-// DELETE a truck schedule by wasteType
-router.delete("/:wasteType", async (req, res) => {
-  try {
-    const deletedSchedule = await TruckSchedule.findOneAndDelete({ wasteType: req.params.wasteType });
-    if (!deletedSchedule) {
-      return res.status(404).json({ message: "Schedule not found for the given wasteType" });
+// DELETE a truck schedule by ID
+router.delete("/:id", async (req, res) => {
+    try {
+      const deletedSchedule = await TruckSchedule.findByIdAndDelete(req.params.id);
+      
+      if (!deletedSchedule) {
+        return res.status(404).json({ message: "Schedule not found for the given ID" });
+      }
+  
+      res.json({ message: "Schedule deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
     }
-    res.json({ message: "Schedule deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+  });
+  
 
 module.exports = router;
