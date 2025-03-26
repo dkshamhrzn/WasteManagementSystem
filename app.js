@@ -54,15 +54,15 @@ mongoose.connect(mongooseURL)
                     // Insert the sample data into the truckSchedules collection
                     TruckSchedule.insertMany([
                         {
-                            "day": "sunday",
+                            "day": "monday",
                             "wasteType": "Biodegradable",
                             "time": "8 AM",
-                            "date": "2025-03-24",
+                            "date": "2025-03-25",
                             "status": "Scheduled"
                         },
-                        {
-                            "day": "monday",
-                            "wasteType": "Non Biodegradable",
+                        { 
+                            "day": "tuesday",
+                            "wasteType": "Non-Biodegradable",
                             "time": "8 AM",
                             "date": "2025-03-26",
                             "status": "Scheduled"
