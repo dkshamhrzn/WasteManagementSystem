@@ -9,10 +9,11 @@ const truckScheduleSchema = new mongoose.Schema({
     day: { type: String } // This will be auto-calculated
 });
 
-// Middleware to calculate day from date before saving
+// Middleware to auto-calculate the day before saving
 truckScheduleSchema.pre("save", function (next) {
     if (this.date) {
-        this.day = moment(this.date, "YYYY-MM-DD").format("dddd");
+        const dateObj = new Date(this.date);
+        this.day = dateObj.toLocaleDateString("en-US", { weekday: "long" });
     }
     next();
 });
