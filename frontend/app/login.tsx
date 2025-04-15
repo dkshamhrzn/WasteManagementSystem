@@ -14,49 +14,55 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
+// Login component for user authentication
 export default function Login() {
   const router = useRouter();
+
+  // State variables for email, password, loading status, and error messages
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Handles user login
   const handleLogin = async () => {
-    Keyboard.dismiss(); // Dismiss the keyboard
-    setErrorMessage("");
-    const trimmedEmail = email.trim();
+    Keyboard.dismiss(); // Dismiss the keyboard when login is pressed
+    setErrorMessage(""); // Clear previous errors
+    const trimmedEmail = email.trim(); // Remove leading/trailing spaces
     const trimmedPassword = password.trim();
 
+    // Validate inputs
     if (!trimmedEmail || !trimmedPassword) {
       setErrorMessage("Email and Password cannot be empty.");
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // Start loading spinner
+
     try {
-      // Log the request payload for debugging
+      // Debug log for request payload
       console.log("Sending request with payload:", { email: trimmedEmail, password: trimmedPassword });
 
-      // Make API call to login
+      // API call to login endpoint
       const response = await fetch("https://wastewise-app.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
       });
 
-      // Log the response status and data for debugging
+      // Debug log for response status and data
       console.log("Response status:", response.status);
       const data = await response.json();
       console.log("Response data:", data);
 
-      setLoading(false);
+      setLoading(false); // Stop loading spinner
 
       if (response.ok) {
-        // Login successful
+        // Successful login
         Alert.alert("Success", data.message || "Login successful!");
-        setTimeout(() => router.replace("/homepage"), 500); // Navigate to homepage after a delay
+        setTimeout(() => router.replace("/nopayhomepage"), 1); // Navigate to homepage
       } else {
-        // Login failed
+        // Handle login failure messages
         if (data.message.includes("Invalid password")) {
           setErrorMessage("Invalid password. Please try again.");
         } else if (data.message.includes("Invalid email")) {
@@ -66,18 +72,24 @@ export default function Login() {
         }
       }
     } catch (error) {
+      // Handle network or unexpected errors
       setLoading(false);
       setErrorMessage("Something went wrong. Please check your internet and try again.");
       console.error("API Error:", error); // Log the error for debugging
     }
   };
 
+  // Render login form UI
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.formContainer}>
           <Text style={styles.title}>Login to <Text style={styles.brand}>WasteWise</Text></Text>
+
+          {/* Display error message if any */}
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+          {/* Email input field */}
           <TextInput 
             style={styles.input} 
             placeholder="Email" 
@@ -87,6 +99,8 @@ export default function Login() {
             onChangeText={setEmail} 
             placeholderTextColor="#666" 
           />
+
+          {/* Password input field */}
           <TextInput 
             style={styles.input} 
             placeholder="Password" 
@@ -95,12 +109,18 @@ export default function Login() {
             onChangeText={setPassword} 
             placeholderTextColor="#666" 
           />
+
+          {/* Forgot password link */}
           <TouchableOpacity onPress={() => router.push("/forgotpassword")}>
             <Text style={styles.forgotPassword}>Forgot password?</Text>
           </TouchableOpacity>
+
+          {/* Login button with loading indicator */}
           <TouchableOpacity style={[styles.loginButton, loading && styles.disabledButton]} onPress={handleLogin} disabled={loading}>
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Login</Text>}
           </TouchableOpacity>
+
+          {/* Link to create a new account */}
           <TouchableOpacity onPress={() => router.push("/SignUpScreen")}> 
             <Text style={styles.createAccount}>Create a new account</Text>
           </TouchableOpacity>
@@ -110,6 +130,7 @@ export default function Login() {
   );
 }
 
+// Styles for the login screen
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
