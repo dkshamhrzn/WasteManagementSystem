@@ -13,19 +13,24 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
+// Forgot Password screen component
 export default function forgotpassword() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  const router = useRouter(); // Hook to navigate between screens
+  const [email, setEmail] = useState(""); // State to store user's email input
+  const [loading, setLoading] = useState(false); // State to show loading indicator during async request
 
+  // Handles the Send button click
   const handleSend = async () => {
+    // Validate that email is not empty
     if (!email.trim()) {
       Alert.alert("Error", "Please enter your email.");
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // Show loading spinner
+
     try {
+      // Send POST request to backend to initiate password reset
       const response = await fetch("https://wastewise-app.onrender.com/forgot-password", {
         method: "POST",
         headers: {
@@ -36,24 +41,34 @@ export default function forgotpassword() {
 
       const data = await response.json();
 
+      // Handle success response
       if (response.ok) {
         Alert.alert("Success", data.message || "Password reset link sent to your email.");
         router.push("/forgotpasswordconfirmation"); // Navigate to confirmation screen
       } else {
+        // Handle server-side error response
         Alert.alert("Error", data.error || "Failed to send reset link. Please try again.");
       }
     } catch (error) {
+      // Catch and handle network or unexpected errors
       Alert.alert("Error", "Something went wrong. Please try again later.");
     } finally {
-      setLoading(false);
+      setLoading(false); // Hide loading spinner
     }
   };
 
+  // Main UI rendering
   return (
+    // Dismiss keyboard when tapping outside the input
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
+        {/* Display logo or illustration */}
         <Image source={require("../assets/images/Thinking.png")} style={styles.image} />
+
+        {/* Title text */}
         <Text style={styles.title}>Forgot your Password?</Text>
+
+        {/* Email input field */}
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -63,9 +78,13 @@ export default function forgotpassword() {
           onChangeText={setEmail}
           placeholderTextColor="#666"
         />
+
+        {/* Navigate back to login screen */}
         <TouchableOpacity onPress={() => router.push("/login")}>
           <Text style={styles.backToSignIn}>Back to sign in</Text>
         </TouchableOpacity>
+
+        {/* Send button with loading indicator */}
         <TouchableOpacity
           style={[styles.sendButton, loading && styles.disabledButton]}
           onPress={handleSend}
@@ -77,6 +96,8 @@ export default function forgotpassword() {
             <Text style={styles.sendButtonText}>Send</Text>
           )}
         </TouchableOpacity>
+
+        {/* Navigate to sign up screen */}
         <TouchableOpacity onPress={() => router.push("/SignUpScreen")}>
           <Text style={styles.createAccount}>Don't have an account?</Text>
         </TouchableOpacity>
@@ -85,6 +106,7 @@ export default function forgotpassword() {
   );
 }
 
+// Styles for the Forgot Password screen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -129,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   disabledButton: {
-    backgroundColor: "#A5D6A7", // Lighter green when disabled
+    backgroundColor: "#A5D6A7", // Light green when button is disabled/loading
   },
   sendButtonText: {
     color: "#FFFFFF",
