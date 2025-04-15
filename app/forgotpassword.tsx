@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-export default function ForgotPassword() {
+export default function forgotpassword() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function ForgotPassword() {
 
       if (response.ok) {
         Alert.alert("Success", data.message || "Password reset link sent to your email.");
-        router.push("/forgotPasswordConfirmation"); // Navigate to confirmation screen
+        router.push("/forgotpasswordconfirmation"); // Navigate to confirmation screen
       } else {
         Alert.alert("Error", data.error || "Failed to send reset link. Please try again.");
       }
