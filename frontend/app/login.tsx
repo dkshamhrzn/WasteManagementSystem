@@ -1,68 +1,86 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
-  ActivityIndicator, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Keyboard, 
-  TouchableWithoutFeedback, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { useRouter } from "expo-router";
 
-// Login component for user authentication
+// Login screen component for user and admin authentication
 export default function Login() {
   const router = useRouter();
 
-  // State variables for email, password, loading status, and error messages
+  // State variables for user inputs and UI state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Handles user login
+  // Handles login logic for both user and admin
   const handleLogin = async () => {
-    Keyboard.dismiss(); // Dismiss the keyboard when login is pressed
-    setErrorMessage(""); // Clear previous errors
-    const trimmedEmail = email.trim(); // Remove leading/trailing spaces
+    Keyboard.dismiss(); // Dismiss the keyboard
+    setErrorMessage(""); // Reset any previous error messages
+
+    const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
 
-    // Validate inputs
+    // Simple validation
     if (!trimmedEmail || !trimmedPassword) {
       setErrorMessage("Email and Password cannot be empty.");
       return;
     }
 
-    setLoading(true); // Start loading spinner
+    // 🔐 Admin login shortcut (hardcoded)
+    if (
+      trimmedEmail.toLowerCase() === "admin123@gmail." &&
+      trimmedPassword === "Admin123"
+    ) {
+      Alert.alert("Admin Login", "Welcome Admin!");
+      setTimeout(() => router.replace("/AdminDashboard"), 1); // Navigate to Admin Dashboard
+      return;
+    }
+
+    // Start loading spinner
+    setLoading(true);
 
     try {
-      // Debug log for request payload
-      console.log("Sending request with payload:", { email: trimmedEmail, password: trimmedPassword });
+      // Debug log: request payload
+      console.log("Sending request with payload:", {
+        email: trimmedEmail,
+        password: trimmedPassword,
+      });
 
       // API call to login endpoint
       const response = await fetch("https://wastewise-app.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password: trimmedPassword,
+        }),
       });
 
-      // Debug log for response status and data
+      // Debug log: response status and data
       console.log("Response status:", response.status);
       const data = await response.json();
       console.log("Response data:", data);
 
-      setLoading(false); // Stop loading spinner
+      setLoading(false); // Stop loading
 
       if (response.ok) {
-        // Successful login
+        // ✅ Successful logincom
         Alert.alert("Success", data.message || "Login successful!");
-        setTimeout(() => router.replace("/nopayhomepage"), 1); // Navigate to homepage
+        setTimeout(() => router.replace("/nopayhomepage"), 1); // Navigate to user homepage
       } else {
-        // Handle login failure messages
+        // ❌ Handle error messages from backend
         if (data.message.includes("Invalid password")) {
           setErrorMessage("Invalid password. Please try again.");
         } else if (data.message.includes("Invalid email")) {
@@ -72,42 +90,48 @@ export default function Login() {
         }
       }
     } catch (error) {
-      // Handle network or unexpected errors
+      // ❗ Handle unexpected errors (e.g., network issues)
       setLoading(false);
       setErrorMessage("Something went wrong. Please check your internet and try again.");
-      console.error("API Error:", error); // Log the error for debugging
+      console.error("API Error:", error);
     }
   };
 
-  // Render login form UI
+  // 📱 UI rendering
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.formContainer}>
-          <Text style={styles.title}>Login to <Text style={styles.brand}>WasteWise</Text></Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.formContainer}
+        >
+          {/* Title */}
+          <Text style={styles.title}>
+            Login to <Text style={styles.brand}>WasteWise</Text>
+          </Text>
 
-          {/* Display error message if any */}
+          {/* Display error if exists */}
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-          {/* Email input field */}
-          <TextInput 
-            style={styles.input} 
-            placeholder="Email" 
-            keyboardType="email-address" 
-            autoCapitalize="none" 
-            value={email} 
-            onChangeText={setEmail} 
-            placeholderTextColor="#666" 
+          {/* Email Input */}
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+            placeholderTextColor="#666"
           />
 
-          {/* Password input field */}
-          <TextInput 
-            style={styles.input} 
-            placeholder="Password" 
-            secureTextEntry 
-            value={password} 
-            onChangeText={setPassword} 
-            placeholderTextColor="#666" 
+          {/* Password Input */}
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            placeholderTextColor="#666"
           />
 
           {/* Forgot password link */}
@@ -115,13 +139,21 @@ export default function Login() {
             <Text style={styles.forgotPassword}>Forgot password?</Text>
           </TouchableOpacity>
 
-          {/* Login button with loading indicator */}
-          <TouchableOpacity style={[styles.loginButton, loading && styles.disabledButton]} onPress={handleLogin} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Login</Text>}
+          {/* Login button with spinner */}
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.disabledButton]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>Login</Text>
+            )}
           </TouchableOpacity>
 
-          {/* Link to create a new account */}
-          <TouchableOpacity onPress={() => router.push("/SignUpScreen")}> 
+          {/* Link to sign-up screen */}
+          <TouchableOpacity onPress={() => router.push("/SignUpScreen")}>
             <Text style={styles.createAccount}>Create a new account</Text>
           </TouchableOpacity>
         </KeyboardAvoidingView>
@@ -130,70 +162,70 @@ export default function Login() {
   );
 }
 
-// Styles for the login screen
+// 🎨 Styles for Login screen
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#FFFFFF", 
-    justifyContent: "center", 
-    alignItems: "center" 
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  formContainer: { 
-    width: "85%" 
+  formContainer: {
+    width: "85%",
   },
-  title: { 
-    fontSize: 20, 
-    fontWeight: "600", 
-    marginBottom: 20, 
-    color: "#333", 
-    textAlign: "center" 
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 20,
+    color: "#333",
+    textAlign: "center",
   },
-  brand: { 
-    fontWeight: "bold", 
-    color: "#2E7D32" 
+  brand: {
+    fontWeight: "bold",
+    color: "#2E7D32",
   },
-  input: { 
-    width: "100%", 
-    height: 50, 
-    borderColor: "#DDD", 
-    borderWidth: 1, 
-    borderRadius: 25, 
-    paddingHorizontal: 15, 
-    marginBottom: 12, 
-    backgroundColor: "#F9F9F9" 
+  input: {
+    width: "100%",
+    height: 50,
+    borderColor: "#DDD",
+    borderWidth: 1,
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginBottom: 12,
+    backgroundColor: "#F9F9F9",
   },
-  forgotPassword: { 
-    color: "#2E7D32", 
-    fontSize: 14, 
-    textAlign: "center", 
-    marginBottom: 10 
+  forgotPassword: {
+    color: "#2E7D32",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 10,
   },
-  loginButton: { 
-    width: "100%", 
-    backgroundColor: "#2E7D32", 
-    paddingVertical: 15, 
-    borderRadius: 25, 
-    alignItems: "center", 
-    marginTop: 10 
+  loginButton: {
+    width: "100%",
+    backgroundColor: "#2E7D32",
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 10,
   },
-  disabledButton: { 
-    opacity: 0.7 
+  disabledButton: {
+    opacity: 0.7,
   },
-  loginButtonText: { 
-    color: "#FFFFFF", 
-    fontSize: 16, 
-    fontWeight: "bold" 
+  loginButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
-  createAccount: { 
-    color: "#2E7D32", 
-    fontSize: 14, 
-    textAlign: "center", 
-    marginTop: 10 
+  createAccount: {
+    color: "#2E7D32",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 10,
   },
-  errorText: { 
-    color: "red", 
-    fontSize: 14, 
-    textAlign: "center", 
-    marginBottom: 10 
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 10,
   },
 });
