@@ -32,22 +32,45 @@ const homepage = () => {
         const response = await fetch("https://wastewise-app.onrender.com/truck-schedules/all-schedules");
         const data: WasteSchedule[] = await response.json();
 
+        const now = new Date();
         const today = new Date();
-        const upcoming = data
-          .filter(s => new Date(s.date) >= today)
+        today.setHours(0, 0, 0, 0);
+
+        // Update status for today's collection if 4+ hours have passed
+        const updatedData = data.map((schedule) => {
+          const scheduleDate = new Date(schedule.date);
+          const isToday = scheduleDate.toDateString() === now.toDateString();
+
+          if (isToday) {
+            const [hourStr, minuteStr] = schedule.time.split(":");
+            const scheduledTime = new Date(schedule.date);
+            scheduledTime.setHours(parseInt(hourStr) + 4, parseInt(minuteStr), 0, 0);
+          }
+
+          return schedule;
+        });
+
+        // Filter upcoming schedules (today or future)
+        const upcoming = updatedData
+          .filter((s) => {
+            const scheduleDate = new Date(s.date);
+            scheduleDate.setHours(0, 0, 0, 0);
+            return scheduleDate >= today;
+          })
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
         if (upcoming) {
           setNextCollection(upcoming);
           const collectionDate = new Date(upcoming.date);
+          collectionDate.setHours(0, 0, 0, 0);
           const diffTime = collectionDate.getTime() - today.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const diffDays = diffTime / (1000 * 60 * 60 * 24);
           setDaysLeft(diffDays);
         }
 
         setLoading(false);
       } catch (error) {
-        console.error("Failed to fetch waste schedules:", error);
+        console.error("Failed to fetch schedules:", error);
         setLoading(false);
       }
     };
@@ -83,13 +106,23 @@ const homepage = () => {
                 Time: <Text style={styles.boldText}>{nextCollection.time}</Text>
               </Text>
               <Text style={styles.subtitle}>
-                Status: <Text style={styles.boldText}>{nextCollection.status}</Text>
+                Status:{" "}
+                <Text
+                  style={[
+                    styles.boldText,
+                    nextCollection.status === "Collection Complete" && { color: "red" },
+                  ]}
+                >
+                  {nextCollection.status}
+                </Text>
               </Text>
 
               {daysLeft === 0 ? (
                 <Text style={styles.todayWarning}>⚠️ Today is the collection day!</Text>
+              ) : daysLeft === 1 ? (
+                <Text style={styles.warning}>⚠️ Collection is tomorrow!</Text>
               ) : (
-                <Text style={styles.warning}>⚠️ Collection in {daysLeft} {daysLeft === 1 ? "day" : "days"}</Text>
+                <Text style={styles.warning}>⚠️ Collection in {daysLeft} days</Text>
               )}
             </PaperCard.Content>
           </PaperCard>
@@ -123,31 +156,19 @@ const homepage = () => {
       </ScrollView>
 
       <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/homepage")}
-        >
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/homepage")}>
           <Image source={require("../assets/images/Home.png")} style={styles.navIcon} />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/info")}
-        >
+
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/info")}>
           <Image source={require("../assets/images/Info.png")} style={styles.navIcon} />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/payment")}
-        >
+
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/payment")}>
           <Image source={require("../assets/images/Coin.png")} style={styles.navIcon} />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/profile")}
-        >
+
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/profile")}>
           <Image source={require("../assets/images/User.png")} style={styles.navIcon} />
         </TouchableOpacity>
       </View>
