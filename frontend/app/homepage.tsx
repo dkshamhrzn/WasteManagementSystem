@@ -11,11 +11,10 @@ import {
 import { Card as PaperCard } from "react-native-paper";
 import { router } from "expo-router";
 
-// Interface for WasteSchedule to define the structure of the schedule data
 interface WasteSchedule {
   _id: string;
   wasteType: string;
-  time: string; 
+  time: string;
   date: string;
   status: string;
   day: string;
@@ -23,54 +22,62 @@ interface WasteSchedule {
 }
 
 const homepage = () => {
-  // State to store the next collection schedule
   const [nextCollection, setNextCollection] = useState<WasteSchedule | null>(null);
-  // State to store the number of days left for the next collection
   const [daysLeft, setDaysLeft] = useState<number>(0);
-  // State to track the loading state while fetching data
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Fetch function to get all truck schedules
     const fetchWasteSchedules = async () => {
       try {
-        // Make API call to get the truck schedules
         const response = await fetch("https://wastewise-app.onrender.com/truck-schedules/all-schedules");
-        const data: WasteSchedule[] = await response.json(); // Parse the response as WasteSchedule array
-        console.log(data);
+        const data: WasteSchedule[] = await response.json();
 
-        // Get today's date without the time part
+        const now = new Date();
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
-        // Find the next upcoming collection schedule
-        const upcoming = data
-          .filter(s => {
+
+        // Update status for today's collection if 4+ hours have passed
+        const updatedData = data.map((schedule) => {
+          const scheduleDate = new Date(schedule.date);
+          const isToday = scheduleDate.toDateString() === now.toDateString();
+
+          if (isToday) {
+            const [hourStr, minuteStr] = schedule.time.split(":");
+            const scheduledTime = new Date(schedule.date);
+            scheduledTime.setHours(parseInt(hourStr) + 4, parseInt(minuteStr), 0, 0);
+          }
+
+          return schedule;
+        });
+
+        // Filter upcoming schedules (today or future)
+        const upcoming = updatedData
+          .filter((s) => {
             const scheduleDate = new Date(s.date);
             scheduleDate.setHours(0, 0, 0, 0);
-            return scheduleDate >= today; // Only consider future dates
+            return scheduleDate >= today;
           })
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]; // Sort by date and pick the first
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
         if (upcoming) {
-          setNextCollection(upcoming); // Set the next collection schedule
+          setNextCollection(upcoming);
           const collectionDate = new Date(upcoming.date);
           collectionDate.setHours(0, 0, 0, 0);
-          const diffTime = collectionDate.getTime() - today.getTime(); // Calculate the difference in time
-          const diffDays = diffTime / (1000 * 60 * 60 * 24); // Convert time difference to days
-          setDaysLeft(diffDays); // Set the number of days left
+          const diffTime = collectionDate.getTime() - today.getTime();
+          const diffDays = diffTime / (1000 * 60 * 60 * 24);
+          setDaysLeft(diffDays);
         }
 
-        setLoading(false); // Stop loading once data is fetched
+        setLoading(false);
       } catch (error) {
-        setLoading(false); // Stop loading on error
+        console.error("Failed to fetch schedules:", error);
+        setLoading(false);
       }
     };
 
-    fetchWasteSchedules(); // Call the fetch function on component mount
+    fetchWasteSchedules();
   }, []);
 
-  // Show a loading indicator while data is being fetched
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -84,15 +91,13 @@ const homepage = () => {
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>WasteWise</Text>
         <Text style={styles.subHeader}>Schedule</Text>
-        {/* Display truck image */}
         <Image source={require("../assets/images/Truck.png")} style={styles.truckImage} />
 
-        {/* Display next collection details if available */}
         {nextCollection ? (
           <PaperCard style={styles.card}>
             <PaperCard.Content>
               <Text style={styles.title}>
-                Upcoming collection: {" "}
+                Upcoming collection:{" "}
                 <Text style={styles.boldText}>
                   {nextCollection.day}, {new Date(nextCollection.date).toDateString().split(" ").slice(1).join(" ")} ({nextCollection.wasteType})
                 </Text>
@@ -101,10 +106,17 @@ const homepage = () => {
                 Time: <Text style={styles.boldText}>{nextCollection.time}</Text>
               </Text>
               <Text style={styles.subtitle}>
-                Status: <Text style={styles.boldText}>{nextCollection.status}</Text>
+                Status:{" "}
+                <Text
+                  style={[
+                    styles.boldText,
+                    nextCollection.status === "Collection Complete" && { color: "red" },
+                  ]}
+                >
+                  {nextCollection.status}
+                </Text>
               </Text>
 
-              {/* Show warning messages based on the number of days left */}
               {daysLeft === 0 ? (
                 <Text style={styles.todayWarning}>⚠️ Today is the collection day!</Text>
               ) : daysLeft === 1 ? (
@@ -115,7 +127,6 @@ const homepage = () => {
             </PaperCard.Content>
           </PaperCard>
         ) : (
-          // Display message if no upcoming collection is found
           <PaperCard style={styles.card}>
             <PaperCard.Content>
               <Text style={styles.title}>No upcoming collections scheduled</Text>
@@ -123,9 +134,7 @@ const homepage = () => {
           </PaperCard>
         )}
 
-        {/* Button container for navigating to other screens */}
         <View style={styles.buttonContainer}>
-          {/* View Schedule button */}
           <PaperCard style={styles.actionCard}>
             <PaperCard.Content style={styles.centerContent}>
               <Image source={require("../assets/images/Calendar.png")} style={styles.largeIcon} />
@@ -135,7 +144,6 @@ const homepage = () => {
             </PaperCard.Content>
           </PaperCard>
 
-          {/* Request Pickup button */}
           <PaperCard style={styles.actionCard}>
             <PaperCard.Content style={styles.centerContent}>
               <Image source={require("../assets/images/Pickuprequest.png")} style={styles.largeIcon} />
@@ -147,37 +155,20 @@ const homepage = () => {
         </View>
       </ScrollView>
 
-      {/* Bottom navigation bar */}
       <View style={styles.bottomNav}>
-        {/* Home button */}
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/homepage")}
-        >
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/homepage")}>
           <Image source={require("../assets/images/Home.png")} style={styles.navIcon} />
         </TouchableOpacity>
-        
-        {/* Info button */}
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/info")}
-        >
+
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/info")}>
           <Image source={require("../assets/images/Info.png")} style={styles.navIcon} />
         </TouchableOpacity>
-        
-        {/* Payment button */}
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/payment")}
-        >
+
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/payment")}>
           <Image source={require("../assets/images/Coin.png")} style={styles.navIcon} />
         </TouchableOpacity>
-        
-        {/* Profile button */}
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/profile")}
-        >
+
+        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/profile")}>
           <Image source={require("../assets/images/User.png")} style={styles.navIcon} />
         </TouchableOpacity>
       </View>
@@ -185,7 +176,6 @@ const homepage = () => {
   );
 };
 
-// Styles for the component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
