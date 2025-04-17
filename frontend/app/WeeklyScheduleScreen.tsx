@@ -1,26 +1,78 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+
+interface WasteSchedule {
+  _id: string;
+  wasteType: string;
+  time: string;
+  date: string;
+  day: string;
+}
 
 const WeeklyScheduleScreen = () => {
+  const [schedules, setSchedules] = useState<WasteSchedule[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        const response = await fetch("https://wastewise-app.onrender.com/truck-schedules/all-schedules");
+        const data = await response.json();
+        setSchedules(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch schedules:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchSchedules();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="green" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Image source={require("../assets/images/Back.png")} style={styles.backIcon} />
-        </TouchableOpacity>
-        <Text style={styles.test}>Weekly Schedule WasteWise</Text>
-      </View>
-
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Placeholder for schedule data */}
+        {schedules.map((item) => (
+          <View key={item._id} style={styles.card}>
+            <View style={styles.row}>
+              <Image
+                source={require("../assets/images/Calendar2.png")}
+                style={styles.icon}
+              />
+              <Text style={styles.text}>{item.day}, {new Date(item.date).toLocaleDateString()}</Text>
+            </View>
+            <View style={styles.row}>
+              <Image
+                source={require("../assets/images/Bin.png")}
+                style={styles.icon}
+              />
+              <Text style={styles.text}>{item.wasteType}</Text>
+            </View>
+            <View style={styles.row}>
+              <Image
+                source={require("../assets/images/Clock.png")}
+                style={styles.icon}
+              />
+              <Text style={styles.text}>{item.time}</Text>
+            </View>
+          </View>
+        ))}
       </ScrollView>
-
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navButton} onPress={() => router.push("/homepage")}>
-          <Image source={require("../assets/images/Home.png")} style={styles.navIcon} />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -29,50 +81,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-  },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 50,
-    paddingBottom: 10,
-    paddingLeft: 10,
-  },
-  test: {
-    color: "green",
-    fontSize: 20,
-    fontWeight: "bold",
-    justifyContent: "center",
-    marginLeft: 58,
-  },
-  backIcon: {
-    width: 38,
-    height: 38,
-    resizeMode: "contain",
+    paddingTop: 20,
   },
   scrollContainer: {
     alignItems: "center",
-    paddingTop: 20,
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    height: 60,
-    backgroundColor: "#D9EFD9",
+  card: {
+    width: "90%",
+    backgroundColor: "#E4F1DE",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+  },
+  row: {
     flexDirection: "row",
-    justifyContent: "space-around",
     alignItems: "center",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    marginBottom: 8,
   },
-  navButton: {
-    padding: 10,
+  icon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
   },
-  navIcon: {
-    width: 30,
-    height: 30,
-    tintColor: "green",
+  text: {
+    fontSize: 16,
+    color: "green",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
