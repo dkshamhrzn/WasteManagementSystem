@@ -110,7 +110,7 @@ const homepage = () => {
                 <Text
                   style={[
                     styles.boldText,
-                    nextCollection.status === "Collection Complete" && { color: "red" },
+                    nextCollection.status === "Collection Complete" && { color: "red" }, // Style
                   ]}
                 >
                   {nextCollection.status}
