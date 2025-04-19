@@ -10,7 +10,7 @@ const resetPasswordRouter = require("./routes/ResetPassword");
 const otpVerificationRouter = require("./routes/otpVerification");
 const truckSchedulesRoutes = require("./routes/truckSchedules");
 const TruckSchedule = require("./models/TruckSchedule"); // Import the TruckSchedule model
-
+const paymentRouter = require("./routes/Payment");
 const app = express();
 
 // Enable CORS for all routes
@@ -56,6 +56,7 @@ app.use("/forgot-password", forgotPasswordRouter);
 app.use("/reset-password", resetPasswordRouter);
 app.use("/verify-otp", otpVerificationRouter);
 app.use("/truck-schedules", truckSchedulesRoutes);
+app.use("/payment", paymentRouter);
 
 // Start the server
 app.listen(5001, () => {
