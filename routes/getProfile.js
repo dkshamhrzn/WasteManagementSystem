@@ -3,16 +3,17 @@ const User = require("../models/UserDetailsSchema");
 
 const router = express.Router();
 
-// Get user profile by ID
+// Get user profile by email
 router.get("/read", async (req, res) => {
     try {
-        const { userId } = req.query;
+        const { email } = req.query;  // Get the email from the query string
 
-        if (!userId) {
-            return res.status(400).json({ message: "User ID is required" });
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
         }
 
-        const user = await User.findById(userId).select("-password"); // Exclude the password field
+        // Find the user by email and select only the required fields (excluding password)
+        const user = await User.findOne({ email }).select("full_name email phone_number address");
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });

@@ -36,5 +36,5 @@ router.put("/update", async (req, res) => {
         res.status(500).json({ error: "Failed to update profile", details: error.message });
     }
 });
-
+ 
 module.exports = router;
