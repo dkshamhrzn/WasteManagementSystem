@@ -1,3 +1,4 @@
+// app.js
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
@@ -14,10 +15,9 @@ const truckSchedulesRoutes = require("./routes/truckSchedules");
 const TruckSchedule = require("./models/TruckSchedule"); // Import the TruckSchedule model
 const paymentRouter = require("./routes/Payment");
 const getProfileRouter = require("./routes/getProfile");
+const deleteProfileRouter = require("./routes/deleteProfile"); // Import the delete profile router
 
-
-
-const userRoutes = require("./routes/userRoutes");//cloudinary
+const userRoutes = require("./routes/userRoutes"); // For cloudinary
 const updateProfileRouter = require("./routes/updateProfile");
 
 const app = express();
@@ -29,8 +29,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Connect to MongoDB
-const mongooseURL =  process.env.MONGODB_URI;
-mongoose.connect(mongooseURL)
+const mongooseURL = process.env.MONGODB_URI;
+mongoose
+    .connect(mongooseURL)
     .then(() => {
         console.log("MongoDB connected");
 
@@ -58,7 +59,7 @@ mongoose.connect(mongooseURL)
     })
     .catch((err) => console.log("MongoDB connection error:", err));
 
-// Use the signup, login, forgot-password, and reset-password routes
+// Use the signup, login, forgot-password, reset-password, and other routes
 app.use('/signup', signupRouter);
 app.use('/login', loginRouter);
 app.use("/forgot-password", forgotPasswordRouter);
@@ -69,7 +70,9 @@ app.use("/payment", paymentRouter);
 app.use("/userProfilePicture", userRoutes);
 app.use("/update-profile", updateProfileRouter);
 app.use("/get-profile", getProfileRouter);
+app.use("/delete-profile", deleteProfileRouter);  // Use the delete-profile route
+
 // Start the server
 app.listen(5001, () => {
     console.log("Server running on port 5001");
-}); 
+});
