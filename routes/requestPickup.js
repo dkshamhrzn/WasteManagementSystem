@@ -22,10 +22,10 @@ router.post("/", async (req, res) => {
         let estimated_price = 0;
         if (quantity.toLowerCase().includes("kg")) {
             const num = parseFloat(quantity);
-            estimated_price = num * 2; // Rs. 2 per kg
+            estimated_price = num * 100; // Rs. 100 per kg
         } else if (quantity.toLowerCase().includes("bag")) {
             const num = parseFloat(quantity);
-            estimated_price = num * 10; // Rs. 10 per bag
+            estimated_price = num * 10; // Rs. 50 per bag
         }
 
         const pickup = new PickupRequest({
