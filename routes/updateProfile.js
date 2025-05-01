@@ -1,33 +1,30 @@
 const express = require("express");
 const User = require("../models/UserDetailsSchema");
+const bcrypt = require("bcryptjs");
 
 const router = express.Router();
 
-// Update user profile
+// Update user profile by email
 router.put("/update", async (req, res) => {
     try {
-        const { userId, full_name, email, phone_number, address, password } = req.body;
+        const { email, full_name, new_email, phone_number, address, password } = req.body;
 
-        if (!userId) {
-            return res.status(400).json({ message: "User ID is required" });
+        if (!email) {
+            return res.status(400).json({ message: "Current email is required to identify the user" });
         }
 
-        const user = await User.findById(userId);
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        user.full_name = full_name || user.full_name;
-        user.email = email || user.email;
-        user.phone_number = phone_number || user.phone_number;
-        user.address = address || user.address;
-        
-        // Optionally, update password if provided
-        if (password) {
-            const bcrypt = require("bcryptjs");
-            user.password = await bcrypt.hash(password, 10);
-        }
+        // Update only the fields provided
+        if (full_name) user.full_name = full_name;
+        if (new_email) user.email = new_email;  // To change email
+        if (phone_number) user.phone_number = phone_number;
+        if (address) user.address = address;
+        if (password) user.password = await bcrypt.hash(password, 10);
 
         await user.save();
 
@@ -36,5 +33,5 @@ router.put("/update", async (req, res) => {
         res.status(500).json({ error: "Failed to update profile", details: error.message });
     }
 });
- 
+
 module.exports = router;
