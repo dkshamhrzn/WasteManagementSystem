@@ -163,15 +163,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    width: 30,
-    height: 30,
-    marginBottom: 40,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   backIcon: {
     width: 24,
     height: 24,
     resizeMode: 'contain',
   },
+  
   heading: {
     textAlign: 'center',
     fontSize: 24,
