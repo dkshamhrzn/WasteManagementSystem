@@ -5,46 +5,80 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  Alert,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const ProfileScreen = () => {
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<{
+    _id?: string;
+    full_name: string;
+    email: string;
+    phone_number: string;
+    address: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const getCurrentUser = async () => {
       try {
-        // Use a test or hardcoded email temporarily (replace later with AsyncStorage or SecureStore)
-        const email = 'testuser@example.com';
-        const response = await fetch(
-          `https://wastewise-app.onrender.com/get-profile/read?email=${encodeURIComponent(email)}`
-        );
-        const data = await response.json();
+        const email =
+          (await SecureStore.getItemAsync('userEmail')) ||
+          (await AsyncStorage.getItem('userEmail'));
 
-        if (data.user) {
-          setProfile(data.user);
+        if (email) {
+          setUserEmail(email);
+          await fetchProfile(email);
+        } else {
+          router.replace('/login');
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error:', error);
+        router.replace('/login');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    getCurrentUser();
   }, []);
 
-  const handleLogout = () => {
+  const fetchProfile = async (email: string) => {
+    try {
+      const response = await fetch(
+        `https://wastewise-app.onrender.com/get-profile/read?email=${encodeURIComponent(email)}`
+      );
+      const data = await response.json();
+
+      if (data.user) {
+        setProfile(data.user);
+
+        const userId = data.user._id;
+        if (userId) {
+          await SecureStore.setItemAsync('userId', userId);
+          await AsyncStorage.setItem('userId', userId);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
-        onPress: () => {
-          // Simulate logout (real clearing of data not included)
+        onPress: async () => {
+          await SecureStore.deleteItemAsync('userEmail');
+          await SecureStore.deleteItemAsync('userId');
+          await AsyncStorage.removeItem('userEmail');
+          await AsyncStorage.removeItem('userId');
           router.replace('/login');
         },
       },
@@ -74,8 +108,8 @@ const ProfileScreen = () => {
             style={styles.avatar}
           />
           <View style={styles.infoContainer}>
-            <Text style={styles.name}>{profile?.full_name || 'Full Name'}</Text>
-            <Text style={styles.email}>{profile?.email || 'Email not found'}</Text>
+            <Text style={styles.name}>{profile?.full_name || 'Full name not available'}</Text>
+            <Text style={styles.email}>{profile?.email || 'Email not available'}</Text>
           </View>
         </View>
 
@@ -115,17 +149,60 @@ const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  scrollContent: { padding: 20, paddingBottom: 100 },
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  backButton: { width: 30, height: 30, marginBottom: 40 },
-  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  heading: { textAlign: 'center', fontSize: 24, color: 'green', fontWeight: 'bold', marginBottom: 30 },
-  profileContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, paddingHorizontal: 10 },
-  avatar: { width: 72, height: 72, borderRadius: 36, marginRight: 16 },
-  infoContainer: { justifyContent: 'center' },
-  name: { fontSize: 20, fontWeight: '600', marginBottom: 4 },
-  email: { fontSize: 14, color: 'gray' },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 100,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 30,
+    height: 30,
+    marginBottom: 40,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  heading: {
+    textAlign: 'center',
+    fontSize: 24,
+    color: 'green',
+    fontWeight: 'bold',
+    marginBottom: 30,
+  },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginRight: 16,
+  },
+  infoContainer: {
+    justifyContent: 'center',
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  email: {
+    fontSize: 14,
+    color: 'gray',
+  },
   editButton: {
     backgroundColor: 'green',
     paddingVertical: 10,
@@ -134,16 +211,34 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 25,
   },
-  editButtonText: { color: '#fff', fontWeight: '500', fontSize: 16 },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 16,
+  },
   card: {
     backgroundColor: '#f8f8f8',
     borderRadius: 15,
     padding: 20,
     marginVertical: 15,
   },
-  cardTitle: { fontWeight: 'bold', marginBottom: 12, fontSize: 18, color: '#333' },
-  cardText: { fontSize: 16, color: '#555', marginBottom: 8 },
-  divider: { height: 1, backgroundColor: '#e0e0e0', width: '100%', marginVertical: 25 },
+  cardTitle: {
+    fontWeight: 'bold',
+    marginBottom: 12,
+    fontSize: 18,
+    color: '#333',
+  },
+  cardText: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    width: '100%',
+    marginVertical: 25,
+  },
   logoutButton: {
     backgroundColor: '#ff4444',
     paddingVertical: 12,
@@ -152,7 +247,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 20,
   },
-  logoutButtonText: { color: '#fff', fontWeight: '500', fontSize: 16 },
+  logoutButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 16,
+  },
   bottomNav: {
     position: 'absolute',
     bottom: 0,
@@ -165,8 +264,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
-  navButton: { padding: 10 },
-  navIcon: { width: 30, height: 30, tintColor: 'green' },
+  navButton: {
+    padding: 10,
+  },
+  navIcon: {
+    width: 30,
+    height: 30,
+    tintColor: 'green',
+  },
 });
 
 export default ProfileScreen;
