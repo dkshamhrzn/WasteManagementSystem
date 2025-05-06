@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,13 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 
 export default function ProfileEdit() {
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [location, setLocation] = useState('');
   const email = 'sisirsisir98052@gmail.com';
-  const [deleting, setDeleting] = useState(false);
-  const [deleteCountdown, setDeleteCountdown] = useState(15);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -42,19 +39,6 @@ export default function ProfileEdit() {
 
     fetchUserData();
   }, []);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-          setDeleting(false);
-          setDeleteCountdown(15);
-        }
-      };
-    }, [])
-  );
 
   const validateLocation = async (query: string) => {
     try {
@@ -102,55 +86,6 @@ export default function ProfileEdit() {
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Update failed.');
-    }
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.prompt(
-      'Confirm Deletion',
-      'Type "yes" to confirm deletion. You will have 15 seconds to cancel.',
-      confirmDelete
-    );
-  };
-
-  const confirmDelete = (input?: string) => {
-    if (input?.toLowerCase() === 'yes') {
-      setDeleting(true);
-      setDeleteCountdown(15);
-
-      let secondsLeft = 15;
-      intervalRef.current = setInterval(() => {
-        secondsLeft -= 1;
-        setDeleteCountdown(secondsLeft);
-
-        if (secondsLeft <= 0) {
-          clearInterval(intervalRef.current!);
-          intervalRef.current = null;
-          deleteAccount();
-        }
-      }, 1000);
-    } else {
-      Alert.alert('Cancelled', 'You must type "yes" to delete the account.');
-    }
-  };
-
-  const deleteAccount = async () => {
-    try {
-      const response = await fetch(
-        `https://wastewise-app.onrender.com/delete-profile/delete?email=${encodeURIComponent(
-          email
-        )}`,
-        { method: 'DELETE' }
-      );
-
-      if (response.ok) {
-        Alert.alert('Deleted', 'Account successfully deleted.');
-        router.replace('/login');
-      } else {
-        throw new Error('Failed to delete account.');
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Deletion failed.');
     }
   };
 
@@ -205,29 +140,6 @@ export default function ProfileEdit() {
             <Text style={styles.doneText}>Done</Text>
           </TouchableOpacity>
         </View>
-
-        {deleting ? (
-          <>
-            <Text style={{ color: 'gray', marginTop: 10 }}>
-              Account will be deleted in {deleteCountdown}s...
-            </Text>
-            <TouchableOpacity
-              style={[styles.deleteButton, { backgroundColor: '#555' }]}
-              onPress={() => {
-                clearInterval(intervalRef.current!);
-                intervalRef.current = null;
-                setDeleting(false);
-                setDeleteCountdown(15);
-              }}
-            >
-              <Text style={styles.deleteButtonText}>Cancel Deletion</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-            <Text style={styles.deleteButtonText}>Delete Account</Text>
-          </TouchableOpacity>
-        )}
       </View>
     </TouchableWithoutFeedback>
   );
@@ -313,20 +225,6 @@ const styles = StyleSheet.create({
   doneText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
-  },
-  deleteButton: {
-    backgroundColor: '#ff4444',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 20,
-    alignSelf: 'center',
-    marginTop: 25,
-    marginBottom: 20,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontWeight: '500',
     fontSize: 16,
   },
 });
