@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,159 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  Alert,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 
-export default function ProfileEditUI() {
+export default function ProfileEdit() {
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [location, setLocation] = useState('');
+  const email = 'sisirsisir98052@gmail.com';
+  const [deleting, setDeleting] = useState(false);
+  const [deleteCountdown, setDeleteCountdown] = useState(15);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(
+          `https://wastewise-app.onrender.com/get-profile/read?email=${encodeURIComponent(
+            email
+          )}`
+        );
+        const data = await response.json();
+        const user = data.user;
+
+        setFullName(user.full_name);
+        setPhoneNumber(user.phone_number);
+        setLocation(user.address);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          setDeleting(false);
+          setDeleteCountdown(15);
+        }
+      };
+    }, [])
+  );
+
+  const validateLocation = async (query: string) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${query}`
+      );
+      const data = await res.json();
+      return data.length > 0;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!fullName || !phoneNumber || !location) {
+      return Alert.alert('Error', 'All fields are required.');
+    }
+
+    const isValidLocation = await validateLocation(location);
+    if (!isValidLocation) {
+      return Alert.alert('Invalid Location', 'Please enter a valid location.');
+    }
+
+    try {
+      const response = await fetch(
+        'https://wastewise-app.onrender.com/update-profile/update',
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            full_name: fullName,
+            phone_number: phoneNumber,
+            address: location,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok) {
+        Alert.alert('Success', 'Profile updated successfully.');
+        router.back();
+      } else {
+        throw new Error(result.message || 'Failed to update');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Update failed.');
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.prompt(
+      'Confirm Deletion',
+      'Type "yes" to confirm deletion. You will have 15 seconds to cancel.',
+      confirmDelete
+    );
+  };
+
+  const confirmDelete = (input?: string) => {
+    if (input?.toLowerCase() === 'yes') {
+      setDeleting(true);
+      setDeleteCountdown(15);
+
+      let secondsLeft = 15;
+      intervalRef.current = setInterval(() => {
+        secondsLeft -= 1;
+        setDeleteCountdown(secondsLeft);
+
+        if (secondsLeft <= 0) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          deleteAccount();
+        }
+      }, 1000);
+    } else {
+      Alert.alert('Cancelled', 'You must type "yes" to delete the account.');
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      const response = await fetch(
+        `https://wastewise-app.onrender.com/delete-profile/delete?email=${encodeURIComponent(
+          email
+        )}`,
+        { method: 'DELETE' }
+      );
+
+      if (response.ok) {
+        Alert.alert('Deleted', 'Account successfully deleted.');
+        router.replace('/login');
+      } else {
+        throw new Error('Failed to delete account.');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Deletion failed.');
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         {/* Back Button */}
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Image source={require('../assets/images/Back.png')} style={styles.backIcon} />
         </TouchableOpacity>
 
@@ -36,23 +179,55 @@ export default function ProfileEditUI() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Name</Text>
-            <TextInput style={styles.input} />
+            <TextInput
+              style={styles.input}
+              value={fullName}
+              onChangeText={setFullName}
+            />
 
             <Text style={styles.label}>Phone Number</Text>
-            <TextInput style={styles.input} keyboardType="phone-pad" />
+            <TextInput
+              style={styles.input}
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+            />
 
             <Text style={styles.label}>Location</Text>
-            <TextInput style={styles.input} />
+            <TextInput
+              style={styles.input}
+              value={location}
+              onChangeText={setLocation}
+            />
           </View>
 
-          <TouchableOpacity style={styles.doneButton}>
+          <TouchableOpacity style={styles.doneButton} onPress={handleSubmit}>
             <Text style={styles.doneText}>Done</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.deleteButton}>
-          <Text style={styles.deleteButtonText}>Delete Account</Text>
-        </TouchableOpacity>
+        {deleting ? (
+          <>
+            <Text style={{ color: 'gray', marginTop: 10 }}>
+              Account will be deleted in {deleteCountdown}s...
+            </Text>
+            <TouchableOpacity
+              style={[styles.deleteButton, { backgroundColor: '#555' }]}
+              onPress={() => {
+                clearInterval(intervalRef.current!);
+                intervalRef.current = null;
+                setDeleting(false);
+                setDeleteCountdown(15);
+              }}
+            >
+              <Text style={styles.deleteButtonText}>Cancel Deletion</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+            <Text style={styles.deleteButtonText}>Delete Account</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableWithoutFeedback>
   );
