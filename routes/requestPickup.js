@@ -88,47 +88,40 @@ router.put("/admin/requests/:id/decision", async (req, res) => {
 
 // ========== USER: View Approved Requests ==========
 // GET /request-pickup/user/:email
-router.get("/user/:email", async (req, res) => {
-    router.get("/user/:email", async (req, res) => {
-        try {
-            const { email } = req.params;
-    
-            const requests = await PickupRequest.find({ user_email: email });
-    
-            if (!requests || requests.length === 0) {
-                return res.status(404).json({ message: "No pickup requests found for this user" });
-            }
-    
-            // Check if all are rejected
-            const allRejected = requests.every(req => req.status === "Rejected");
-    
-            if (allRejected) {
-                return res.json([{ msg: "Your request was rejected" }]);
-            }
-    
-            // Process requests, excluding rejected ones
-            const formattedRequests = requests
-                .filter(req => req.status !== "Rejected")
-                .map(req => {
-                    let displayMessage = "";
-                    if (req.status === "Approved") {
-                        displayMessage = `Request approved for ${req.admin_confirmed_date || req.preferred_date} at ${req.admin_confirmed_time || req.preferred_time}`;
-                    } else {
-                        displayMessage = "Your request is pending approval";
-                    }
-    
-                    return {
-                        ...req.toObject(),
-                        user_status_message: displayMessage
-                    };
-                });
-    
-            res.json(formattedRequests);
-        } catch (error) {
-            res.status(500).json({ message: "Error retrieving requests", error: error.message });
+router.get("/user/requests/:email", async (req, res) => {
+    try {
+        const { email } = req.params;
+
+        const requests = await PickupRequest.find({ user_email: email });
+
+        if (!requests || requests.length === 0) {
+            return res.status(404).json({ message: "No requests found for this user" });
         }
-    });
-    
+
+        const formattedRequests = requests.map(req => {
+            let statusMessage = "";
+
+            if (req.status === "Approved") {
+                statusMessage = `Your request is approved for ${req.admin_confirmed_date || req.preferred_date} at ${req.admin_confirmed_time || req.preferred_time}`;
+            } else if (req.status === "Rejected") {
+                statusMessage = "Your request was rejected by admin";
+            } else {
+                statusMessage = "Your request is pending approval";
+            }
+
+            return {
+                ...req.toObject(),
+                final_date: req.admin_confirmed_date || req.preferred_date,
+                final_time: req.admin_confirmed_time || req.preferred_time,
+                user_status_message: statusMessage,
+            };
+        });
+
+        res.json(formattedRequests);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch user requests", error: error.message });
+    }
 });
+
 
 module.exports = router;
