@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const PickupRequest = require("../models/PickupRequest");
 
-// POST /request-pickup
+// ========== USER: Submit Pickup Request ==========
 router.post("/", async (req, res) => {
     try {
         const {
@@ -11,21 +11,22 @@ router.post("/", async (req, res) => {
             location,
             preferred_date,
             preferred_time,
-            notes
+            notes,
+            user_email
         } = req.body;
 
-        if (!waste_type || !quantity || !location || !preferred_date || !preferred_time) {
+        if (!waste_type || !quantity || !location || !preferred_date || !preferred_time || !user_email) {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
-        // Simple price estimation logic (adjust as needed)
+        // Simple price estimation logic
         let estimated_price = 0;
         if (quantity.toLowerCase().includes("kg")) {
             const num = parseFloat(quantity);
             estimated_price = num * 100; // Rs. 100 per kg
         } else if (quantity.toLowerCase().includes("bag")) {
             const num = parseFloat(quantity);
-            estimated_price = num * 10; // Rs. 50 per bag
+            estimated_price = num * 50; // Rs. 50 per bag
         }
 
         const pickup = new PickupRequest({
@@ -35,6 +36,7 @@ router.post("/", async (req, res) => {
             preferred_date,
             preferred_time,
             notes,
+            user_email,
             estimated_price
         });
 
@@ -44,6 +46,89 @@ router.post("/", async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Failed to submit pickup request", error: error.message });
     }
+});
+
+// ========== ADMIN: View All Pending Requests ==========
+router.get("/admin/requests", async (req, res) => {
+    try {
+        const pendingRequests = await PickupRequest.find({ status: "Pending" });
+        res.json(pendingRequests);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch requests", error: error.message });
+    }
+});
+
+// ========== ADMIN: Approve or Reject Request ==========
+router.put("/admin/requests/:id/decision", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, admin_confirmed_date, admin_confirmed_time } = req.body;
+
+        if (!["Approved", "Rejected"].includes(status)) {
+            return res.status(400).json({ message: "Invalid status. Must be 'Approved' or 'Rejected'" });
+        }
+
+        const update = {
+            status,
+            admin_confirmed_date: admin_confirmed_date || null,
+            admin_confirmed_time: admin_confirmed_time || null,
+        };
+
+        const updatedRequest = await PickupRequest.findByIdAndUpdate(id, update, { new: true });
+
+        if (!updatedRequest) {
+            return res.status(404).json({ message: "Request not found" });
+        }
+
+        res.json({ message: `Request ${status.toLowerCase()}`, request: updatedRequest });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update request", error: error.message });
+    }
+});
+
+// ========== USER: View Approved Requests ==========
+// GET /request-pickup/user/:email
+router.get("/user/:email", async (req, res) => {
+    router.get("/user/:email", async (req, res) => {
+        try {
+            const { email } = req.params;
+    
+            const requests = await PickupRequest.find({ user_email: email });
+    
+            if (!requests || requests.length === 0) {
+                return res.status(404).json({ message: "No pickup requests found for this user" });
+            }
+    
+            // Check if all are rejected
+            const allRejected = requests.every(req => req.status === "Rejected");
+    
+            if (allRejected) {
+                return res.json([{ msg: "Your request was rejected" }]);
+            }
+    
+            // Process requests, excluding rejected ones
+            const formattedRequests = requests
+                .filter(req => req.status !== "Rejected")
+                .map(req => {
+                    let displayMessage = "";
+                    if (req.status === "Approved") {
+                        displayMessage = `Request approved for ${req.admin_confirmed_date || req.preferred_date} at ${req.admin_confirmed_time || req.preferred_time}`;
+                    } else {
+                        displayMessage = "Your request is pending approval";
+                    }
+    
+                    return {
+                        ...req.toObject(),
+                        user_status_message: displayMessage
+                    };
+                });
+    
+            res.json(formattedRequests);
+        } catch (error) {
+            res.status(500).json({ message: "Error retrieving requests", error: error.message });
+        }
+    });
+    
 });
 
 module.exports = router;

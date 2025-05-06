@@ -20,7 +20,8 @@ const deleteProfileRouter = require("./routes/deleteProfile"); // Import the del
 const userRoutes = require("./routes/userRoutes"); // For cloudinary
 const updateProfileRouter = require("./routes/updateProfile");
 const requestPickupRouter = require("./routes/requestPickup");
-
+const adminPickupRoutes = require("./routes/adminPickupRoutes");
+const userPickupRoutes = require("./routes/userPickupRoutes");
 
 const app = express();
 
@@ -69,11 +70,16 @@ app.use("/reset-password", resetPasswordRouter);
 app.use("/verify-otp", otpVerificationRouter);
 app.use("/truck-schedules", truckSchedulesRoutes);
 app.use("/payment", paymentRouter);
+
 app.use("/userProfilePicture", userRoutes);
 app.use("/update-profile", updateProfileRouter);
 app.use("/get-profile", getProfileRouter);
 app.use("/delete-profile", deleteProfileRouter);  // Use the delete-profile route
+
 app.use("/request-pickup", requestPickupRouter);
+app.use("/pickup/admin", adminPickupRoutes); // Admin routes
+app.use("/pickup/user", userPickupRoutes);   // User routes
+
 // Start the server
 app.listen(5001, () => {
     console.log("Server running on port 5001");
