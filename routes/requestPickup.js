@@ -108,7 +108,7 @@ router.get("/user/requests/:email", async (req, res) => {
             const scheduledDateTime = new Date(`${finalDate} ${finalTime}`);
 
             // If approved and time has passed, mark as Complete
-            if (req.status === "Approved" && now > scheduledDateTime) {
+            if ((req.status === "Approved" || req.status === "Rejected") && now > scheduledDateTime) {
                 req.status = "Complete";
                 await req.save();
             }
