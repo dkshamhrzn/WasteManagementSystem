@@ -1,23 +1,112 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
   Image,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { StyleSheet } from "react-native";
 
 const RequestPickupScreen = () => {
+  const [wasteType, setWasteType] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [location, setLocation] = useState("");
+  const [preferredDate, setPreferredDate] = useState("");
+  const [preferredTime, setPreferredTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownItems, setDropdownItems] = useState([
+    { label: "Biodegradable", value: "Biodegradable" },
+    { label: "Non-Biodegradable", value: "Non-Biodegradable" },
+    { label: "Electronic Waste", value: "Electronic Waste" },
+  ]);
+
+  useEffect(() => {
+    fetchUserEmail();
+  }, []);
+
+  const fetchUserEmail = async () => {
+    try {
+      const secureEmail = await SecureStore.getItemAsync("userEmail");
+      const asyncEmail = await AsyncStorage.getItem("userEmail");
+      const userEmail = secureEmail || asyncEmail;
+
+      if (userEmail) {
+        setEmail(userEmail);
+      } else {
+        Alert.alert("User email not found", "Please log in again.");
+      }
+    } catch (error) {
+      console.error("Error fetching user email:", error);
+      Alert.alert("Error", "Failed to retrieve user email.");
+    }
+  };
+
+  const submitPickupRequest = async () => {
+    if (!wasteType || !quantity || !location || !preferredDate || !preferredTime) {
+      Alert.alert("Missing Fields", "Please fill all required fields.");
+      return;
+    }
+
+    const payload = {
+      waste_type: wasteType,
+      quantity,
+      location,
+      preferred_date: preferredDate,
+      preferred_time: preferredTime,
+      notes,
+      user_email: email,
+    };
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("https://wastewise-app.onrender.com/request-pickup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit pickup request");
+      }
+
+      Alert.alert("Success", "Pickup request submitted successfully.");
+      resetForm();
+    } catch (error) {
+      console.error("Submit failed:", error);
+      Alert.alert("Error", "Failed to submit pickup request.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setWasteType("");
+    setQuantity("");
+    setLocation("");
+    setPreferredDate("");
+    setPreferredTime("");
+    setNotes("");
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity style={styles.backButton}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.replace("./homepage")}>
             <Image source={require("../assets/images/Back.png")} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.title}>Request for pickup</Text>
@@ -30,60 +119,44 @@ const RequestPickupScreen = () => {
         <View style={styles.card}>
           <DropDownPicker
             placeholder="Type of waste"
-            open={false}
-            value={null}
-            items={[]}
-            setOpen={() => {}}
-            setValue={() => {}}
-            setItems={() => {}}
+            open={dropdownOpen}
+            value={wasteType}
+            items={dropdownItems}
+            setOpen={setDropdownOpen}
+            setValue={setWasteType}
+            setItems={setDropdownItems}
             style={styles.dropdown}
             dropDownContainerStyle={styles.dropdownContainer}
             textStyle={styles.dropdownText}
           />
 
           <Text style={styles.label}>Quantity (in kg or bags):</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., 5 kg or 3 bags"
-          />
+          <TextInput style={styles.input} placeholder="e.g., 5 kg or 3 bags" value={quantity} onChangeText={setQuantity} />
 
           <Text style={styles.label}>Pickup Location:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter location"
-            placeholderTextColor="#aaa"
-          />
+          <TextInput style={styles.input} placeholder="Enter location" value={location} onChangeText={setLocation} />
 
-          <Text style={styles.label}>Preferred Pickup Date (YYYY-MM-DD):</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="2025-05-05"
-            placeholderTextColor="#aaa"
-          />
+          <Text style={styles.label}>Preferred Pickup Date:</Text>
+          <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={preferredDate} onChangeText={setPreferredDate} />
 
-          <Text style={styles.label}>Preferred Pickup Time (e.g., 10:00 AM):</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="10:00 AM"
-            placeholderTextColor="#aaa"
-          />
+          <Text style={styles.label}>Preferred Pickup Time:</Text>
+          <TextInput style={styles.input} placeholder="e.g., 10:00 AM" value={preferredTime} onChangeText={setPreferredTime} />
 
           <Text style={styles.label}>Additional notes (optional):</Text>
           <TextInput
             style={styles.notesInput}
             placeholder="Write any additional instructions"
-            placeholderTextColor="#666"
             multiline
             numberOfLines={4}
+            value={notes}
+            onChangeText={setNotes}
           />
 
-          <TouchableOpacity style={styles.submitButton}>
-            <Text style={styles.submitText}>Request Pickup</Text>
+          <TouchableOpacity style={styles.submitButton} onPress={submitPickupRequest} disabled={isSubmitting}>
+            <Text style={styles.submitText}>
+              {isSubmitting ? "Submitting..." : "Request Pickup"}
+            </Text>
           </TouchableOpacity>
-
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceText}>Estimated Price: Rs. 250</Text>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -180,19 +253,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  priceContainer: {
-    marginTop: 16,
-    padding: 10,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderColor: "green",
-    borderWidth: 1,
-  },
-  priceText: {
-    color: "green",
-    fontWeight: "bold",
-    fontSize: 16,
-    textAlign: "center",
   },
 });
