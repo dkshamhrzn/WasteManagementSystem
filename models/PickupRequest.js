@@ -31,7 +31,7 @@ const pickupRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Pending", "Approved", "Rejected"],
+    enum: ["Pending", "Approved", "Rejected","Complete"],
     default: "Pending",
   },
   user_email: {

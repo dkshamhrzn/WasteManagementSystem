@@ -98,26 +98,41 @@ router.get("/user/requests/:email", async (req, res) => {
             return res.status(404).json({ message: "No requests found for this user" });
         }
 
-        const formattedRequests = requests.map(req => {
-            let statusMessage = "";
+        const now = new Date();
 
+        const updatedRequests = await Promise.all(requests.map(async req => {
+            const finalDate = req.admin_confirmed_date || req.preferred_date;
+            const finalTime = req.admin_confirmed_time || req.preferred_time;
+
+            // Combine date and time into one Date object
+            const scheduledDateTime = new Date(`${finalDate} ${finalTime}`);
+
+            // If approved and time has passed, mark as Complete
+            if (req.status === "Approved" && now > scheduledDateTime) {
+                req.status = "Complete";
+                await req.save();
+            }
+
+            let statusMessage = "";
             if (req.status === "Approved") {
-                statusMessage = `Your request is approved for ${req.admin_confirmed_date || req.preferred_date} at ${req.admin_confirmed_time || req.preferred_time}`;
+                statusMessage = `Your request is approved for ${finalDate} at ${finalTime}`;
             } else if (req.status === "Rejected") {
                 statusMessage = "Your request was rejected by admin";
+            } else if (req.status === "Complete") {
+                statusMessage = "Pickup has been completed";
             } else {
                 statusMessage = "Your request is pending approval";
             }
 
             return {
                 ...req.toObject(),
-                final_date: req.admin_confirmed_date || req.preferred_date,
-                final_time: req.admin_confirmed_time || req.preferred_time,
+                final_date: finalDate,
+                final_time: finalTime,
                 user_status_message: statusMessage,
             };
-        });
+        }));
 
-        res.json(formattedRequests);
+        res.json(updatedRequests);
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch user requests", error: error.message });
     }
