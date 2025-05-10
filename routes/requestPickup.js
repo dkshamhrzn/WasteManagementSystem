@@ -15,23 +15,36 @@ router.post("/", async (req, res) => {
             user_email
         } = req.body;
 
-        if (!waste_type || !quantity || !location || !preferred_date || !preferred_time || !user_email) {
+        if (!waste_type || quantity == null || !location || !preferred_date || !preferred_time || !user_email) {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
-        // Simple price estimation logic
-        let estimated_price = 0;
-        if (quantity.toLowerCase().includes("kg")) {
-            const num = parseFloat(quantity);
-            estimated_price = num * 100; // Rs. 100 per kg
-        } else if (quantity.toLowerCase().includes("bag")) {
-            const num = parseFloat(quantity);
-            estimated_price = num * 50; // Rs. 50 per bag
+        const numericQuantity = parseFloat(quantity);
+        if (isNaN(numericQuantity)) {
+            return res.status(400).json({ message: "Quantity must be a valid number" });
         }
+
+        // Sample price estimation logic based on waste type
+        let ratePerUnit = 0;
+        switch (waste_type.toLowerCase()) {
+            case "nondegradable":
+                ratePerUnit = 5;
+                break;
+            case "biodegradable":
+                ratePerUnit = 3;
+                break;
+            case "recyclable":
+                ratePerUnit = 10;
+                break;
+            default:
+                ratePerUnit = 2; // default rate
+        }
+
+        const estimated_price = numericQuantity * ratePerUnit;
 
         const pickup = new PickupRequest({
             waste_type,
-            quantity,
+            quantity: numericQuantity,
             location,
             preferred_date,
             preferred_time,
@@ -87,7 +100,6 @@ router.put("/admin/requests/:id/decision", async (req, res) => {
 });
 
 // ========== USER: View Approved Requests ==========
-// GET /request-pickup/user/:email
 router.get("/user/requests/:email", async (req, res) => {
     try {
         const { email } = req.params;
@@ -104,10 +116,8 @@ router.get("/user/requests/:email", async (req, res) => {
             const finalDate = req.admin_confirmed_date || req.preferred_date;
             const finalTime = req.admin_confirmed_time || req.preferred_time;
 
-            // Combine date and time into one Date object
             const scheduledDateTime = new Date(`${finalDate} ${finalTime}`);
 
-            // If approved and time has passed, mark as Complete
             if ((req.status === "Approved" || req.status === "Rejected") && now > scheduledDateTime) {
                 req.status = "Complete";
                 await req.save();
@@ -137,6 +147,5 @@ router.get("/user/requests/:email", async (req, res) => {
         res.status(500).json({ message: "Failed to fetch user requests", error: error.message });
     }
 });
-
 
 module.exports = router;
