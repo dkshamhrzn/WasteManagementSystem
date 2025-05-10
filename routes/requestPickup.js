@@ -73,6 +73,15 @@ router.get("/admin/requests", async (req, res) => {
         res.status(500).json({ message: "Failed to fetch requests", error: error.message });
     }
 });
+// ========== ADMIN: View All Requests ==========
+router.get("/admin/all-requests", async (req, res) => {
+    try {
+        const allRequests = await PickupRequest.find(); // No filter means fetch all
+        res.json(allRequests);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch all requests", error: error.message });
+    }
+});
 
 // ========== ADMIN: Approve or Reject Request ==========
 router.put("/admin/requests/:id/decision", async (req, res) => {

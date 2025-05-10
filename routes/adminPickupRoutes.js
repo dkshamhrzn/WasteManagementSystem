@@ -21,24 +21,6 @@ router.put("/approve/:id", async (req, res) => {
         request.admin_confirmed_time = admin_confirmed_time;
         await request.save();
 
-        // ✅ Setup Nodemailer using your existing config
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST,
-            port: process.env.EMAIL_PORT,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-        });
-
-        // ✅ Send email notification to user
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: request.user_email,
-            subject: "Your Pickup Request has been Approved",
-            text: `Hello,\n\nYour pickup request for ${request.waste_type} has been approved.\n\nConfirmed Date: ${admin_confirmed_date}\nConfirmed Time: ${admin_confirmed_time}\n\nThank you for using WasteWise!`,
-        });
-
         res.json({ message: "Request approved and user notified", request });
     } catch (error) {
         console.error(error);
