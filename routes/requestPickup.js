@@ -19,6 +19,7 @@ router.post("/", async (req, res) => {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
+        // Ensure quantity is a number
         const numericQuantity = parseFloat(quantity);
         if (isNaN(numericQuantity)) {
             return res.status(400).json({ message: "Quantity must be a valid number" });
@@ -27,24 +28,26 @@ router.post("/", async (req, res) => {
         // Sample price estimation logic based on waste type
         let ratePerUnit = 0;
         switch (waste_type.toLowerCase()) {
-            case "Non-Biodegradable":
-                ratePerUnit = 5;
+            case "non-biodegradable":
+                ratePerUnit = 50;
                 break;
-            case "Biodegradable":
-                ratePerUnit = 3;
+            case "biodegradable":
+                ratePerUnit = 20;
                 break;
-            case "Recyclable":
-                ratePerUnit = 10;
+            case "recyclable":
+                ratePerUnit = 30;
                 break;
             default:
                 ratePerUnit = 2; // default rate
         }
 
+        // Calculate estimated price
         const estimated_price = numericQuantity * ratePerUnit;
 
+        // Save pickup request to the database
         const pickup = new PickupRequest({
             waste_type,
-            quantity: numericQuantity,
+            quantity: numericQuantity, // Ensure quantity is saved as a number
             location,
             preferred_date,
             preferred_time,
