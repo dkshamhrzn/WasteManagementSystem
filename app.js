@@ -45,10 +45,10 @@ const path = require("path");
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Optional route for direct access
-app.get("/khalti", (req, res) => {
+app.get("/initialpayment", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "initialPayment.html"));
 });
-app.get("/payment", (req, res) => {
+app.get("/generalpayment", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "generalPayment.html"));
 });
 
