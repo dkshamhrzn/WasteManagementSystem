@@ -48,6 +48,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get("/khalti", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "initialPayment.html"));
 });
+app.get("/payment", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "generalPayment.html"));
+});
 
 
 // Connect to MongoDB
