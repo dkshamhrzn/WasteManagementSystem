@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 require("dotenv").config();
 
+
+
 const Role = require("./models/UserRoleSchema");
 const signupRouter = require("./routes/Signup");
 const loginRouter = require("./routes/Login");
@@ -35,6 +37,18 @@ app.use(cors());
 
 // Parse incoming JSON requests
 app.use(bodyParser.json());
+
+
+const path = require("path");
+
+// Serve static files from the "public" folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Optional route for direct access
+app.get("/khalti", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "initialPayment.html"));
+});
+
 
 // Connect to MongoDB
 const mongooseURL = process.env.MONGODB_URI;

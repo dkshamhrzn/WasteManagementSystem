@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khalti Payment Integration</title>
+    <script src="https://khalti.com/static/khalti-checkout.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f2f6fc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem; /* Adjusted for readability on mobile */
+            text-align: center;
+        }
+
+        #payment-button {
+            background-color: #279347;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1rem; /* Larger button text */
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            max-width: 300px; /* Button width on larger screens */
+            display: inline-block;
+        }
+
+        #payment-button:hover {
+            background-color: #135a28;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h2 {
+                font-size: 1.6rem;
+            }
+
+            #payment-button {
+                font-size: 0.9rem;
+                padding: 12px 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            #payment-button {
+                font-size: 0.8rem;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>Pay NPR 500 with Khalti</h2>
+    <button id="payment-button">Retry Payment</button>
+
+    <script>
+        var config = {
+            publicKey: "test_public_key_dc74b7b5a8b84956a2b440f8aa7d67dc",
+            productIdentity: "1234567890",
+            productName: "WasteWise",
+            productUrl: "http://localhost:3000",
+            eventHandler: {
+                onSuccess(payload) {
+                    console.log("Payment Successful:", payload);
+                    fetch('http://localhost:5000/khalti/verify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            token: payload.token,
+                            amount: payload.amount
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('Verification response:', data);
+                        alert(data.success ? 'Payment Verified!' : 'Verification Failed!');
+                    })
+                    .catch(err => {
+                        console.error('Verification error:', err);
+                        alert('Error verifying payment.');
+                    });
+                },
+                onError(error) {
+                    console.log('Payment Error:', error);
+                },
+                onClose() {
+                    console.log('Khalti widget is closing');
+                    document.getElementById("payment-button").style.display = "inline-block";
+                }
+            }
+        };
+
+        var checkout = new KhaltiCheckout(config);
+
+        window.onload = function () {
+            checkout.show({ amount: 50000 }); // 500 NPR in paisa
+        };
+
+        document.getElementById("payment-button").onclick = function () {
+            checkout.show({ amount: 50000 });
+        };
+    </script>
+</body>
+</html>
