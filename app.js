@@ -23,6 +23,9 @@ const requestPickupRouter = require("./routes/requestPickup");
 const adminPickupRoutes = require("./routes/adminPickupRoutes");
 const userPickupRoutes = require("./routes/userPickupRoutes");
 
+// const paymentRoutes = require('./routes/Payment');
+
+
 const app = express();
 
 // Enable CORS for all routes

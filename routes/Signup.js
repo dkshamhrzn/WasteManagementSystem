@@ -3,11 +3,12 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/UserDetailsSchema");
 const Role = require("../models/UserRoleSchema");
 const Signup = require("../models/SignupSchema");
+const PaymentStatus = require("../models/PaymentStatus"); // <--- Add this line
 
 const router = express.Router();  // We use Router for routes
 
 // Signup route
-router.post("/", async (req, res) => {  // Change the route here to handle POST requests to /signup
+router.post("/", async (req, res) => {
     try { 
         const { full_name, email, phone_number, password, address, role_name } = req.body;
 
@@ -17,7 +18,7 @@ router.post("/", async (req, res) => {  // Change the route here to handle POST 
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: "email already in use." });
+            return res.status(400).json({ message: "Email already in use." });
         }
 
         const role = await Role.findOne({ role_name });
@@ -45,11 +46,24 @@ router.post("/", async (req, res) => {  // Change the route here to handle POST 
 
         await newSignup.save();
 
-        res.status(201).json({ message: "Signup successful", user: newUser, signup: newSignup });
+        // ✅ Create initial payment status (default is 'unpaid')
+        const paymentStatus = new PaymentStatus({
+            email: newUser.email,
+            status: "unpaid", // Optional since default is unpaid
+        });
+
+        await paymentStatus.save();
+
+        res.status(201).json({
+            message: "Signup successful",
+            user: newUser,
+            signup: newSignup,
+            paymentStatus: paymentStatus,
+        });
     } catch (error) {
         console.error("Signup error:", error);
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
 
-module.exports = router; // Export the signup routes
+module.exports = router;
