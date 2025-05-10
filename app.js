@@ -25,6 +25,8 @@ const userPickupRoutes = require("./routes/userPickupRoutes");
 
 // const paymentRoutes = require('./routes/Payment');
 
+const paymentRoutes = require('./routes/Payment');
+
 
 const app = express();
 
@@ -82,6 +84,8 @@ app.use("/delete-profile", deleteProfileRouter);  // Use the delete-profile rout
 app.use("/request-pickup", requestPickupRouter);
 app.use("/pickup/admin", adminPickupRoutes); // Admin routes
 app.use("/pickup/user", userPickupRoutes);   // User routes
+
+app.use('/api/payment', paymentRoutes);
 
 // Start the server
 app.listen(5001, () => {
