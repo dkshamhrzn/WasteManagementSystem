@@ -1,36 +1,57 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 const Info = () => {
+  const [isPaid, setIsPaid] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const fetchPaymentStatus = async () => {
+      const paid = await SecureStore.getItemAsync('isPaid');
+      setIsPaid(paid === 'true');
+    };
+    fetchPaymentStatus();
+  }, []);
+
+  const navigateHome = () => {
+    if (isPaid === true) {
+      router.push('/homepage');
+    } else {
+      router.push('/nopayhomepage');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Navigation Header with Logo */}
       <View style={styles.headerContainer}>
-        {/* Bug: Back button does nothing */}
-        <TouchableOpacity 
-          onPress={() => { /* Intentionally doing nothing */ }} 
-          style={styles.backButton}
-        >
-          <Image 
-            source={require('../assets/images/Back.png')} 
-            style={styles.backIcon} 
+        <TouchableOpacity onPress={navigateHome} style={styles.backButton}>
+          <Image
+            source={require('../assets/images/Back.png')}
+            style={styles.backIcon}
           />
         </TouchableOpacity>
-        
+
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../assets/images/logo.png')} 
-            style={styles.headerLogo} 
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.headerLogo}
           />
           <Text style={styles.headerText}>WasteWise</Text>
         </View>
-        
+
         <View style={styles.emptySpace} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Content */}
         <View style={styles.contentContainer}>
           <Text style={styles.title}>About us</Text>
           <Text style={styles.text}>
@@ -39,14 +60,14 @@ const Info = () => {
           </Text>
 
           <Text style={styles.subtitle}>Features of WasteWise</Text>
-          
+
           <Text style={styles.featureItem}>📅 Waste Collection Schedule & Notifications</Text>
           <Text style={styles.featureDetail}>Users receive automatic notifications on collection days.</Text>
-          
+
           <Text style={styles.featureItem}>🚛 Request Pickup Service</Text>
           <Text style={styles.featureDetail}>Schedule a pickup for specific waste types (📄Paper, 🏗Metal, 🛍Plastic, etc.).</Text>
           <Text style={styles.featureDetail}>Secure payment to Khalti before confirming the request.</Text>
-          
+
           <Text style={styles.featureItem}>🔔 Notifications & Reminders</Text>
           <Text style={styles.featureDetail}>Get notified on the day of collection and one day before the pickup date.</Text>
 
@@ -59,56 +80,64 @@ const Info = () => {
           <View style={styles.divider} />
 
           <Text style={styles.subtitle}>📖 How To Use the App?</Text>
-          
+
           <Text style={styles.stepTitle}>1. Check Your Schedule</Text>
           <Text style={styles.stepDetail}>View your upcoming waste collection days.</Text>
-          
+
           <Text style={styles.stepTitle}>2. Get Notifications</Text>
           <Text style={styles.stepDetail}>Get alerts for your scheduled collection.</Text>
-          
+
           <Text style={styles.stepTitle}>3. Request a Pickup</Text>
           <Text style={styles.stepDetail}>Choose waste type & pay via Khalti.</Text>
-          
+
           <Text style={styles.stepTitle}>4. Track Your Request</Text>
           <Text style={styles.stepDetail}>See the status of your pickup.</Text>
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation - Updated to match homepage */}
+      {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/homepage")}
-        >
-          <Image source={require("../assets/images/Home.png")} style={styles.navIcon} />
+        <TouchableOpacity style={styles.navButton} onPress={navigateHome}>
+          <Image
+            source={require('../assets/images/Home.png')}
+            style={styles.navIcon}
+          />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/info")}
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => router.push('/info')}
         >
-          <Image source={require("../assets/images/Info.png")} style={[styles.navIcon, styles.activeNavIcon]} />
+          <Image
+            source={require('../assets/images/Info.png')}
+            style={[styles.navIcon, styles.activeNavIcon]}
+          />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/payment")}
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => router.push('/payment')}
         >
-          <Image source={require("../assets/images/Coin.png")} style={styles.navIcon} />
+          <Image
+            source={require('../assets/images/Coin.png')}
+            style={styles.navIcon}
+          />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => router.push("/profile")}
+
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => router.push('/profile')}
         >
-          <Image source={require("../assets/images/User.png")} style={styles.navIcon} />
+          <Image
+            source={require('../assets/images/User.png')}
+            style={styles.navIcon}
+          />
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-// Keep all your existing styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
