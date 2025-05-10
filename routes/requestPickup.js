@@ -27,13 +27,13 @@ router.post("/", async (req, res) => {
         // Sample price estimation logic based on waste type
         let ratePerUnit = 0;
         switch (waste_type.toLowerCase()) {
-            case "nondegradable":
+            case "Non-Biodegradable":
                 ratePerUnit = 5;
                 break;
-            case "biodegradable":
+            case "Biodegradable":
                 ratePerUnit = 3;
                 break;
-            case "recyclable":
+            case "Recyclable":
                 ratePerUnit = 10;
                 break;
             default:
