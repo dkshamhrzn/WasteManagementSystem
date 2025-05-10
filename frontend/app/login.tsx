@@ -13,52 +13,48 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-// Login screen component for user and admin authentication
 export default function Login() {
   const router = useRouter();
-
-  // State variables for user inputs and UI state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Handles login logic for both user and admin
+  const storeUserData = async (email: string) => {
+    try {
+      await SecureStore.setItemAsync('userEmail', email);
+      await AsyncStorage.setItem('userEmail', email);
+    } catch (error) {
+      console.error('Error storing user data:', error);
+    }
+  };
+
   const handleLogin = async () => {
-    Keyboard.dismiss(); // Dismiss the keyboard
-    setErrorMessage(""); // Reset any previous error messages
+    Keyboard.dismiss();
+    setErrorMessage("");
 
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
 
-    // Simple validation
     if (!trimmedEmail || !trimmedPassword) {
       setErrorMessage("Email and Password cannot be empty.");
       return;
     }
 
-    // 🔐 Admin login shortcut (hardcoded)
-    if (
-      trimmedEmail.toLowerCase() === "admin123@gmail." &&
-      trimmedPassword === "Admin123"
-    ) {
+    // Admin login
+    if (trimmedEmail === "admin123@gmail.com" && trimmedPassword === "Admin123") {
+      await storeUserData(trimmedEmail);
       Alert.alert("Admin Login", "Welcome Admin!");
-      setTimeout(() => router.replace("/AdminDashboard"), 1); // Navigate to Admin Dashboard
+      router.replace("/adminDashboard");
       return;
     }
 
-    // Start loading spinner
     setLoading(true);
 
     try {
-      // Debug log: request payload
-      console.log("Sending request with payload:", {
-        email: trimmedEmail,
-        password: trimmedPassword,
-      });
-
-      // API call to login endpoint
       const response = await fetch("https://wastewise-app.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,36 +64,21 @@ export default function Login() {
         }),
       });
 
-      // Debug log: response status and data
-      console.log("Response status:", response.status);
       const data = await response.json();
-      console.log("Response data:", data);
-
-      setLoading(false); // Stop loading
-
+      
       if (response.ok) {
-        // ✅ Successful logincom
-        Alert.alert("Success", data.message || "Login successful!");
-        setTimeout(() => router.replace("/nopayhomepage"), 1); // Navigate to user homepage
+        await storeUserData(trimmedEmail); // Store email for profile screen
+        router.replace("/nopayhomepage");
       } else {
-        // ❌ Handle error messages from backend
-        if (data.message.includes("Invalid password")) {
-          setErrorMessage("Invalid password. Please try again.");
-        } else if (data.message.includes("Invalid email")) {
-          setErrorMessage("Invalid email. Please check and try again.");
-        } else {
-          setErrorMessage("Invalid credentials. Please try again.");
-        }
+        setErrorMessage(data.message || "Invalid credentials");
       }
     } catch (error) {
-      // ❗ Handle unexpected errors (e.g., network issues)
+      setErrorMessage("Network error. Please try again.");
+    } finally {
       setLoading(false);
-      setErrorMessage("Something went wrong. Please check your internet and try again.");
-      console.error("API Error:", error);
     }
   };
 
-  // 📱 UI rendering
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
@@ -105,15 +86,12 @@ export default function Login() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.formContainer}
         >
-          {/* Title */}
           <Text style={styles.title}>
             Login to <Text style={styles.brand}>WasteWise</Text>
           </Text>
 
-          {/* Display error if exists */}
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-          {/* Email Input */}
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -124,7 +102,6 @@ export default function Login() {
             placeholderTextColor="#666"
           />
 
-          {/* Password Input */}
           <TextInput
             style={styles.input}
             placeholder="Password"
@@ -134,12 +111,10 @@ export default function Login() {
             placeholderTextColor="#666"
           />
 
-          {/* Forgot password link */}
           <TouchableOpacity onPress={() => router.push("/forgotpassword")}>
             <Text style={styles.forgotPassword}>Forgot password?</Text>
           </TouchableOpacity>
 
-          {/* Login button with spinner */}
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.disabledButton]}
             onPress={handleLogin}
@@ -152,7 +127,6 @@ export default function Login() {
             )}
           </TouchableOpacity>
 
-          {/* Link to sign-up screen */}
           <TouchableOpacity onPress={() => router.push("/SignUpScreen")}>
             <Text style={styles.createAccount}>Create a new account</Text>
           </TouchableOpacity>
@@ -162,7 +136,7 @@ export default function Login() {
   );
 }
 
-// 🎨 Styles for Login screen
+// Keep your existing styles exactly the same
 const styles = StyleSheet.create({
   container: {
     flex: 1,
