@@ -4,17 +4,18 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  StyleSheet,
   ScrollView,
   Image,
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { StyleSheet } from "react-native";
 
 const RequestPickupScreen = () => {
   const [wasteType, setWasteType] = useState("");
@@ -24,7 +25,20 @@ const RequestPickupScreen = () => {
   const [preferredTime, setPreferredTime] = useState("");
   const [notes, setNotes] = useState("");
   const [email, setEmail] = useState("");
+  const [statusData, setStatusData] = useState<StatusData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingStatus, setIsFetchingStatus] = useState(false);
+
+  interface StatusData {
+    waste_type: string;
+    quantity: string;
+    location: string;
+    final_date: string;
+    final_time: string;
+    status: string;
+    user_status_message: string;
+    estimated_price: number;
+  }
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownItems, setDropdownItems] = useState([
@@ -45,12 +59,34 @@ const RequestPickupScreen = () => {
 
       if (userEmail) {
         setEmail(userEmail);
+        fetchPickupStatus(userEmail);
       } else {
         Alert.alert("User email not found", "Please log in again.");
       }
     } catch (error) {
       console.error("Error fetching user email:", error);
       Alert.alert("Error", "Failed to retrieve user email.");
+    }
+  };
+
+  const fetchPickupStatus = async (userEmail: string) => {
+    setIsFetchingStatus(true);
+    try {
+      const response = await fetch(
+        `https://wastewise-app.onrender.com/request-pickup/user/requests/${userEmail}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch status");
+      }
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setStatusData(data[data.length - 1]);
+      }
+    } catch (error) {
+      console.error("Status fetch failed:", error);
+      Alert.alert("Error", "Failed to load pickup status.");
+    } finally {
+      setIsFetchingStatus(false);
     }
   };
 
@@ -84,6 +120,7 @@ const RequestPickupScreen = () => {
       }
 
       Alert.alert("Success", "Pickup request submitted successfully.");
+      fetchPickupStatus(email);
       resetForm();
     } catch (error) {
       console.error("Submit failed:", error);
@@ -157,6 +194,22 @@ const RequestPickupScreen = () => {
               {isSubmitting ? "Submitting..." : "Request Pickup"}
             </Text>
           </TouchableOpacity>
+
+          {isFetchingStatus && <ActivityIndicator size="large" color="green" style={{ marginTop: 10 }} />}
+
+          {statusData && (
+            <View style={styles.statusCard}>
+              <Text style={styles.statusTitle}>Latest Pickup Status</Text>
+              <Text><Text style={styles.bold}>Waste Type:</Text> {statusData.waste_type}</Text>
+              <Text><Text style={styles.bold}>Quantity:</Text> {statusData.quantity}</Text>
+              <Text><Text style={styles.bold}>Location:</Text> {statusData.location}</Text>
+              <Text><Text style={styles.bold}>Pickup Date:</Text> {statusData.final_date}</Text>
+              <Text><Text style={styles.bold}>Pickup Time:</Text> {statusData.final_time}</Text>
+              <Text><Text style={styles.bold}>Status:</Text> {statusData.status}</Text>
+              <Text><Text style={styles.bold}>Message:</Text> {statusData.user_status_message}</Text>
+              <Text style={styles.statusPrice}>Estimated Price: Rs. {statusData.estimated_price}</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -252,6 +305,30 @@ const styles = StyleSheet.create({
   submitText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  statusCard: {
+    marginTop: 20,
+    padding: 14,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderColor: "green",
+    borderWidth: 1,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "green",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  statusPrice: {
+    marginTop: 8,
+    color: "green",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  bold: {
     fontWeight: "bold",
   },
 });
