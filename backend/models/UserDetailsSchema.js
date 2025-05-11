@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema({
     resetTokenExpiration: {
         type: Date,
         default: null,
+    },
+    profilePicture: {
+        type: String,
+        default: null,
     }
 });
 
