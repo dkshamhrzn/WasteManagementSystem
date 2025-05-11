@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const PickupRequest = require("../models/PickupRequest");
-const nodemailer = require("nodemailer");
-require("dotenv").config(); // Make sure .env variables are loaded
 
 // Admin approves a pickup request
 router.put("/approve/:id", async (req, res) => {
@@ -21,7 +19,7 @@ router.put("/approve/:id", async (req, res) => {
         request.admin_confirmed_time = admin_confirmed_time;
         await request.save();
 
-        res.json({ message: "Request approved and user notified", request });
+        res.json({ message: "Request approved", request });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error approving request", error: error.message });
