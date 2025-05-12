@@ -17,34 +17,39 @@ import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
+interface StatusData {
+  waste_type: string;
+  quantity: string;
+  location: string;
+  final_date: string;
+  final_time: string;
+  status: string;
+  user_status_message: string;
+  estimated_price: number;
+}
+
 const RequestPickupScreen = () => {
   const [wasteType, setWasteType] = useState("");
   const [quantity, setQuantity] = useState("");
   const [location, setLocation] = useState("");
-  const [preferredDate, setPreferredDate] = useState("");
-  const [preferredTime, setPreferredTime] = useState("");
+  const [year, setYear] = useState("");
+  const [month, setMonth] = useState("");
+  const [day, setDay] = useState("");
+  const [hour, setHour] = useState("");
+  const [minute, setMinute] = useState("");
+  const [ampm, setAmpm] = useState("AM");
   const [notes, setNotes] = useState("");
   const [email, setEmail] = useState("");
-  const [statusData, setStatusData] = useState<StatusData | null>(null);
+  const [statusData, setStatusData] = useState<StatusData[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingStatus, setIsFetchingStatus] = useState(false);
-
-  interface StatusData {
-    waste_type: string;
-    quantity: string;
-    location: string;
-    final_date: string;
-    final_time: string;
-    status: string;
-    user_status_message: string;
-    estimated_price: number;
-  }
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownItems, setDropdownItems] = useState([
     { label: "Biodegradable", value: "Biodegradable" },
     { label: "Non-Biodegradable", value: "Non-Biodegradable" },
-    { label: "Electronic Waste", value: "Electronic Waste" },
+    { label: "Recyclable", value: "Recyclable" },
   ]);
 
   useEffect(() => {
@@ -56,7 +61,6 @@ const RequestPickupScreen = () => {
       const secureEmail = await SecureStore.getItemAsync("userEmail");
       const asyncEmail = await AsyncStorage.getItem("userEmail");
       const userEmail = secureEmail || asyncEmail;
-
       if (userEmail) {
         setEmail(userEmail);
         fetchPickupStatus(userEmail);
@@ -80,7 +84,13 @@ const RequestPickupScreen = () => {
       }
       const data = await response.json();
       if (Array.isArray(data) && data.length > 0) {
-        setStatusData(data[data.length - 1]);
+        const sortedData = data.sort((a, b) => {
+          // If time information is available, combine date and time
+          const dateA = new Date(`${a.final_date} ${a.final_time}`);
+          const dateB = new Date(`${b.final_date} ${b.final_time}`);
+          return dateB.getTime() - dateA.getTime();
+        });
+        setStatusData(sortedData);
       }
     } catch (error) {
       console.error("Status fetch failed:", error);
@@ -90,53 +100,103 @@ const RequestPickupScreen = () => {
     }
   };
 
-  const submitPickupRequest = async () => {
-    if (!wasteType || !quantity || !location || !preferredDate || !preferredTime) {
-      Alert.alert("Missing Fields", "Please fill all required fields.");
-      return;
-    }
+  // Validate input fields and return true if valid, false otherwise.
+  // Also, updates error state for fields with issues.
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
 
-    const payload = {
-      waste_type: wasteType,
-      quantity,
-      location,
-      preferred_date: preferredDate,
-      preferred_time: preferredTime,
-      notes,
-      user_email: email,
-    };
+    if (!wasteType) newErrors.wasteType = "Please select a waste type.";
+    if (!quantity || isNaN(Number(quantity))) newErrors.quantity = "Enter a valid quantity (e.g., 5.3).";
+    if (!location) newErrors.location = "Pickup location is required.";
+    
+    if (!year || year.length !== 4 || isNaN(Number(year)))
+      newErrors.year = "Enter a valid 4-digit year.";
+    if (!month || isNaN(Number(month)) || Number(month) < 1 || Number(month) > 12)
+      newErrors.month = "Month must be between 1 and 12.";
+    if (!day || isNaN(Number(day)) || Number(day) < 1 || Number(day) > 31)
+      newErrors.day = "Day must be between 1 and 31.";
+    if (!hour || isNaN(Number(hour)) || Number(hour) < 1 || Number(hour) > 12)
+      newErrors.hour = "Hour must be between 1 and 12.";
+    if (!minute || isNaN(Number(minute)) || Number(minute) < 0 || Number(minute) > 59)
+      newErrors.minute = "Minute must be between 0 and 59.";
 
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("https://wastewise-app.onrender.com/request-pickup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit pickup request");
-      }
-
-      Alert.alert("Success", "Pickup request submitted successfully.");
-      fetchPickupStatus(email);
-      resetForm();
-    } catch (error) {
-      console.error("Submit failed:", error);
-      Alert.alert("Error", "Failed to submit pickup request.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
+
+  const submitPickupRequest = async () => {
+  if (!validateForm()) {
+    Alert.alert("Invalid Input", "Please correct the highlighted fields.");
+    return;
+  }
+
+  // Ask user if they want to proceed to payment
+  Alert.alert(
+    "Paid Service",
+    "This is a paid service. Do you want to proceed to payment?",
+    [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Yes",
+        onPress: async () => {
+          const preferredDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+          const preferredTime = `${hour.padStart(2, "0")}:${minute.padStart(2, "0")} ${ampm}`;
+
+          const payload = {
+            waste_type: wasteType,
+            quantity,
+            location,
+            preferred_date: preferredDate,
+            preferred_time: preferredTime,
+            notes,
+            user_email: email,
+          };
+
+          setIsSubmitting(true);
+          try {
+            const response = await fetch("https://wastewise-app.onrender.com/request-pickup", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              throw new Error("Failed to submit pickup request");
+            }
+
+            resetForm();
+            fetchPickupStatus(email);
+            // Navigate to payment link
+            router.replace("https://wastewise-app.onrender.com/generalpayment");
+          } catch (error) {
+            console.error("Submit failed:", error);
+            Alert.alert("Error", "Failed to submit pickup request.");
+          } finally {
+            setIsSubmitting(false);
+          }
+        },
+      },
+    ],
+    { cancelable: true }
+  );
+};
+
 
   const resetForm = () => {
     setWasteType("");
     setQuantity("");
     setLocation("");
-    setPreferredDate("");
-    setPreferredTime("");
+    setYear("");
+    setMonth("");
+    setDay("");
+    setHour("");
+    setMinute("");
+    setAmpm("AM");
     setNotes("");
+    setErrors({});
   };
 
   return (
@@ -150,35 +210,133 @@ const RequestPickupScreen = () => {
         </View>
 
         <Text style={styles.description}>
-          Use this form to request a waste pickup. Select the type of waste, submit your request, and our system will process it for collection.
+          Use this form to request a waste pickup. Select the type of waste, fill in the details and our system will process your request.
         </Text>
 
         <View style={styles.card}>
+          {/* Waste Type Picker */}
           <DropDownPicker
             placeholder="Type of waste"
             open={dropdownOpen}
             value={wasteType}
             items={dropdownItems}
             setOpen={setDropdownOpen}
-            setValue={setWasteType}
+            setValue={(callback: any) => {
+              const newValue = callback(wasteType);
+              setWasteType(newValue);
+              if (newValue) setErrors((prev) => ({ ...prev, wasteType: "" }));
+            }}
             setItems={setDropdownItems}
-            style={styles.dropdown}
+            style={[styles.dropdown, errors.wasteType && styles.inputError]}
             dropDownContainerStyle={styles.dropdownContainer}
             textStyle={styles.dropdownText}
           />
+          {errors.wasteType && <Text style={styles.errorText}>{errors.wasteType}</Text>}
 
-          <Text style={styles.label}>Quantity (in kg or bags):</Text>
-          <TextInput style={styles.input} placeholder="e.g., 5 kg or 3 bags" value={quantity} onChangeText={setQuantity} />
+          {/* Quantity */}
+          <Text style={styles.label}>Quantity (kg):</Text>
+          <TextInput
+            style={[styles.input, errors.quantity && styles.inputError]}
+            placeholder="e.g., 5.33"
+            value={quantity}
+            onChangeText={(text) => {
+              setQuantity(text);
+              setErrors((prev) => ({ ...prev, quantity: "" }));
+            }}
+            keyboardType="numeric"
+          />
+          {errors.quantity && <Text style={styles.errorText}>{errors.quantity}</Text>}
 
+          {/* Location */}
           <Text style={styles.label}>Pickup Location:</Text>
-          <TextInput style={styles.input} placeholder="Enter location" value={location} onChangeText={setLocation} />
+          <TextInput
+            style={[styles.input, errors.location && styles.inputError]}
+            placeholder="Enter location"
+            value={location}
+            onChangeText={(text) => {
+              setLocation(text);
+              setErrors((prev) => ({ ...prev, location: "" }));
+            }}
+          />
+          {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
 
+          {/* Preferred Pickup Date */}
           <Text style={styles.label}>Preferred Pickup Date:</Text>
-          <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={preferredDate} onChangeText={setPreferredDate} />
+          <View style={styles.dateRow}>
+            <TextInput
+              style={[styles.dateInput, errors.year && styles.inputError]}
+              placeholder="YYYY"
+              maxLength={4}
+              keyboardType="numeric"
+              value={year}
+              onChangeText={(text) => {
+                setYear(text);
+                setErrors((prev) => ({ ...prev, year: "" }));
+              }}
+            />
+            <TextInput
+              style={[styles.dateInput, errors.month && styles.inputError]}
+              placeholder="MM"
+              maxLength={2}
+              keyboardType="numeric"
+              value={month}
+              onChangeText={(text) => {
+                setMonth(text);
+                setErrors((prev) => ({ ...prev, month: "" }));
+              }}
+            />
+            <TextInput
+              style={[styles.dateInput, errors.day && styles.inputError]}
+              placeholder="DD"
+              maxLength={2}
+              keyboardType="numeric"
+              value={day}
+              onChangeText={(text) => {
+                setDay(text);
+                setErrors((prev) => ({ ...prev, day: "" }));
+              }}
+            />
+          </View>
+          {errors.year && <Text style={styles.errorText}>{errors.year}</Text>}
+          {errors.month && <Text style={styles.errorText}>{errors.month}</Text>}
+          {errors.day && <Text style={styles.errorText}>{errors.day}</Text>}
 
+          {/* Preferred Pickup Time */}
           <Text style={styles.label}>Preferred Pickup Time:</Text>
-          <TextInput style={styles.input} placeholder="e.g., 10:00 AM" value={preferredTime} onChangeText={setPreferredTime} />
+          <View style={styles.dateRow}>
+            <TextInput
+              style={[styles.dateInput, errors.hour && styles.inputError]}
+              placeholder="HH"
+              maxLength={2}
+              keyboardType="numeric"
+              value={hour}
+              onChangeText={(text) => {
+                setHour(text);
+                setErrors((prev) => ({ ...prev, hour: "" }));
+              }}
+            />
+            <TextInput
+              style={[styles.dateInput, errors.minute && styles.inputError]}
+              placeholder="MM"
+              maxLength={2}
+              keyboardType="numeric"
+              value={minute}
+              onChangeText={(text) => {
+                setMinute(text);
+                setErrors((prev) => ({ ...prev, minute: "" }));
+              }}
+            />
+            <TouchableOpacity
+              style={styles.ampmButton}
+              onPress={() => setAmpm(ampm === "AM" ? "PM" : "AM")}
+            >
+              <Text style={styles.ampmText}>{ampm}</Text>
+            </TouchableOpacity>
+          </View>
+          {errors.hour && <Text style={styles.errorText}>{errors.hour}</Text>}
+          {errors.minute && <Text style={styles.errorText}>{errors.minute}</Text>}
 
+          {/* Additional Notes */}
           <Text style={styles.label}>Additional notes (optional):</Text>
           <TextInput
             style={styles.notesInput}
@@ -189,25 +347,42 @@ const RequestPickupScreen = () => {
             onChangeText={setNotes}
           />
 
+          {/* Submit Button */}
           <TouchableOpacity style={styles.submitButton} onPress={submitPickupRequest} disabled={isSubmitting}>
-            <Text style={styles.submitText}>
-              {isSubmitting ? "Submitting..." : "Request Pickup"}
-            </Text>
+            <Text style={styles.submitText}>{isSubmitting ? "Submitting..." : "Request Pickup"}</Text>
           </TouchableOpacity>
 
+          {/* Status Loader and List */}
           {isFetchingStatus && <ActivityIndicator size="large" color="green" style={{ marginTop: 10 }} />}
-
-          {statusData && (
-            <View style={styles.statusCard}>
-              <Text style={styles.statusTitle}>Latest Pickup Status</Text>
-              <Text><Text style={styles.bold}>Waste Type:</Text> {statusData.waste_type}</Text>
-              <Text><Text style={styles.bold}>Quantity:</Text> {statusData.quantity}</Text>
-              <Text><Text style={styles.bold}>Location:</Text> {statusData.location}</Text>
-              <Text><Text style={styles.bold}>Pickup Date:</Text> {statusData.final_date}</Text>
-              <Text><Text style={styles.bold}>Pickup Time:</Text> {statusData.final_time}</Text>
-              <Text><Text style={styles.bold}>Status:</Text> {statusData.status}</Text>
-              <Text><Text style={styles.bold}>Message:</Text> {statusData.user_status_message}</Text>
-              <Text style={styles.statusPrice}>Estimated Price: Rs. {statusData.estimated_price}</Text>
+          {statusData.length > 0 && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={styles.statusTitle}>All Pickup Requests</Text>
+              {statusData.map((item, index) => (
+                <View key={index} style={styles.statusCard}>
+                  <Text>
+                    <Text style={styles.bold}>Waste Type:</Text> {item.waste_type}
+                  </Text>
+                  <Text>
+                    <Text style={styles.bold}>Quantity:</Text> {item.quantity}
+                  </Text>
+                  <Text>
+                    <Text style={styles.bold}>Location:</Text> {item.location}
+                  </Text>
+                  <Text>
+                    <Text style={styles.bold}>Pickup Date:</Text> {item.final_date}
+                  </Text>
+                  <Text>
+                    <Text style={styles.bold}>Pickup Time:</Text> {item.final_time}
+                  </Text>
+                  <Text>
+                    <Text style={styles.bold}>Status:</Text> {item.status}
+                  </Text>
+                  <Text>
+                    <Text style={styles.bold}>Message:</Text> {item.user_status_message}
+                  </Text>
+                  <Text style={styles.statusPrice}>Estimated Price: Rs. {item.estimated_price}</Text>
+                </View>
+              ))}
             </View>
           )}
         </View>
@@ -296,6 +471,34 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
     marginBottom: 16,
   },
+  dateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  dateInput: {
+    backgroundColor: "#fff",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    height: 45,
+    flex: 1,
+    marginHorizontal: 4,
+    paddingHorizontal: 10,
+  },
+  ampmButton: {
+    backgroundColor: "#fff",
+    borderColor: "green",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  ampmText: {
+    color: "green",
+    fontWeight: "bold",
+  },
   submitButton: {
     backgroundColor: "green",
     borderRadius: 8,
@@ -308,7 +511,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   statusCard: {
-    marginTop: 20,
+    marginTop: 10,
     padding: 14,
     backgroundColor: "#fff",
     borderRadius: 8,
@@ -330,5 +533,13 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: "bold",
+  },
+  inputError: {
+    borderColor: "red",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 8,
   },
 });
