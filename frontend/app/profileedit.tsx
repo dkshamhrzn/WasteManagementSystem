@@ -9,6 +9,7 @@ import {
   Alert,
   Keyboard,
   TouchableWithoutFeedback,
+  Modal,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,6 +23,9 @@ export default function ProfileEdit() {
   const [deleting, setDeleting] = useState(false);
   const [deleteCountdown, setDeleteCountdown] = useState(15);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [confirmationText, setConfirmationText] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -65,61 +69,42 @@ export default function ProfileEdit() {
     }, [])
   );
 
-  const validateLocation = async (query: string) => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${query}`
-      );
-      const data = await res.json();
-      return data.length > 0;
-    } catch {
-      return false;
-    }
-  };
 
   const handleSubmit = async () => {
-    if (!fullName || !phoneNumber || !location) {
-      return Alert.alert('Error', 'All fields are required.');
-    }
+  if (!fullName || !phoneNumber || !location) {
+    return Alert.alert('Error', 'All fields are required.');
+  }
 
-    const isValidLocation = await validateLocation(location);
-    if (!isValidLocation) {
-      return Alert.alert('Invalid Location', 'Please enter a valid location.');
-    }
-
-    try {
-      const response = await fetch(
-        'https://wastewise-app.onrender.com/update-profile/update',
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            full_name: fullName,
-            phone_number: phoneNumber,
-            address: location,
-          }),
-        }
-      );
-
-      const result = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', 'Profile updated successfully.');
-        router.back();
-      } else {
-        throw new Error(result.message || 'Failed to update');
+  try {
+    const response = await fetch(
+      'https://wastewise-app.onrender.com/update-profile/update',
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          full_name: fullName,
+          phone_number: phoneNumber,
+          address: location,
+        }),
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Update failed.');
+    );
+
+    const result = await response.json();
+    if (response.ok) {
+      Alert.alert('Success', 'Profile updated successfully.');
+      router.back();
+    } else {
+      throw new Error(result.message || 'Failed to update');
     }
-  };
+  } catch (error: any) {
+    Alert.alert('Error', error.message || 'Update failed.');
+  }
+};
+
 
   const handleDeleteAccount = () => {
-    Alert.prompt(
-      'Confirm Deletion',
-      'Type "yes" to confirm deletion. You will have 15 seconds to cancel.',
-      confirmDelete
-    );
+    setShowPrompt(true); // Show custom modal
   };
 
   const confirmDelete = (input?: string) => {
@@ -239,6 +224,43 @@ export default function ProfileEdit() {
             <Text style={styles.deleteButtonText}>Delete Account</Text>
           </TouchableOpacity>
         )}
+
+        {/* Modal Prompt */}
+        {showPrompt && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Confirm Deletion</Text>
+              <Text style={styles.modalText}>Type "yes" to confirm deletion.</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={confirmationText}
+                onChangeText={setConfirmationText}
+                autoFocus
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: '#ccc' }]}
+                  onPress={() => {
+                    setShowPrompt(false);
+                    setConfirmationText('');
+                  }}
+                >
+                  <Text>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: '#ff4444' }]}
+                  onPress={() => {
+                    setShowPrompt(false);
+                    confirmDelete(confirmationText);
+                    setConfirmationText('');
+                  }}
+                >
+                  <Text style={{ color: 'white' }}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
     </TouchableWithoutFeedback>
   );
@@ -339,5 +361,54 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '500',
     fontSize: 16,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  modalContainer: {
+    width: 300,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 14,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalInput: {
+    width: '100%',
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 15,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
   },
 });

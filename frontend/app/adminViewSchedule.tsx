@@ -15,6 +15,8 @@ import {
 import RNPickerSelect from 'react-native-picker-select';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import adminViewallSchedule from './adminViewallSchedule';
+
 
 export default function ViewScheduleScreen() {
   const [selectedType, setSelectedType] = useState('Biodegradable');

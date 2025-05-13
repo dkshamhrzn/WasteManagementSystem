@@ -6,15 +6,17 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Platform,
+  Image,
 } from 'react-native';
-import { Picker as RNPicker } from '@react-native-picker/picker';
+import RNPickerSelect from 'react-native-picker-select';
+import { useRouter } from 'expo-router';
 
 export default function CreateScheduleScreen() {
   const [wasteType, setWasteType] = useState('Biodegradable');
   const [day, setDay] = useState('');
   const [time, setTime] = useState('');
   const [popupMessage, setPopupMessage] = useState('');
+  const router = useRouter();
 
   const handleSave = async () => {
     if (!day || !time) {
@@ -29,7 +31,11 @@ export default function CreateScheduleScreen() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ wasteType, day, time }),
+        body: JSON.stringify({
+          wasteType,
+          day,
+          time,
+        }),
       });
 
       if (response.ok) {
@@ -54,24 +60,37 @@ export default function CreateScheduleScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Image
+          source={require('../assets/images/Back.png')}
+          style={styles.backIcon}
+        />
+      </TouchableOpacity>
+
       <Text style={styles.heading}>Create New Schedule</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>Waste Type:</Text>
         <View style={styles.pickerContainer}>
-          <RNPicker
-            selectedValue={wasteType}
+          <RNPickerSelect
+            value={wasteType}
             onValueChange={(value) => setWasteType(value)}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-          >
-            <RNPicker.Item label="Biodegradable" value="Biodegradable" />
-            <RNPicker.Item label="Non-Biodegradable" value="Non-Biodegradable" />
-            <RNPicker.Item label="Recyclable" value="Recyclable" />
-          </RNPicker>
+            items={[
+              { label: 'Biodegradable', value: 'Biodegradable' },
+              { label: 'Non-Biodegradable', value: 'Non-Biodegradable' },
+              { label: 'Recyclable', value: 'Recyclable' },
+            ]}
+            style={{
+              inputIOS: styles.picker,
+              inputAndroid: styles.picker,
+              inputWeb: styles.picker,
+            }}
+            useNativeAndroidPickerStyle={false}
+          />
         </View>
 
-        <Text style={styles.label}>Day:</Text>
+        <Text style={styles.label}>Day</Text>
         <TextInput
           style={styles.input}
           value={day}
@@ -110,6 +129,17 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     alignItems: 'center',
   },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
+  },
+  backIcon: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+  },
   heading: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -133,15 +163,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     overflow: 'hidden',
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
   },
   picker: {
-    height: Platform.OS === 'android' ? 50 : undefined,
-    width: '100%',
-  },
-  pickerItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    color: '#000',
     fontSize: 16,
+    backgroundColor: '#fff',
   },
   input: {
     backgroundColor: '#fff',
@@ -150,8 +178,6 @@ const styles = StyleSheet.create({
     height: 40,
     marginTop: 5,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
   },
   button: {
     backgroundColor: '#2E7D32',
