@@ -1,18 +1,22 @@
-import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
-  ActivityIndicator, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Keyboard, 
-  TouchableWithoutFeedback, 
+// Login.tsx
+
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 export default function Login() {
   const router = useRouter();
@@ -21,9 +25,54 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // 🔁 Auto login check
+  useEffect(() => {
+    const checkLogin = async () => {
+      const storedEmail = await SecureStore.getItemAsync("userEmail");
+      if (storedEmail) {
+        try {
+          const statusRes = await fetch(
+            `https://wastewise-app.onrender.com/api/payment/status?email=${storedEmail}`
+          );
+          const statusData = await statusRes.json();
+
+          const isPaid = statusData.status === "paid";
+          await SecureStore.setItemAsync("isPaid", isPaid ? "true" : "false");
+
+          if (isPaid) {
+            router.replace("/homepage");
+          } else {
+            router.replace("/nopayhomepage");
+          }
+        } catch (error) {
+          console.log("Auto login failed", error);
+        }
+      }
+    };
+
+    checkLogin();
+  }, []);
+
+  // 🗂 Store user data securely
+  const storeUserData = async (email: string, userId?: string, isPaid?: boolean) => {
+    try {
+      await SecureStore.setItemAsync("userEmail", email);
+      await AsyncStorage.setItem("userEmail", email);
+      if (userId) {
+        await SecureStore.setItemAsync("userId", userId);
+      }
+      if (isPaid !== undefined) {
+        await SecureStore.setItemAsync("isPaid", isPaid ? "true" : "false");
+      }
+    } catch (error) {
+      console.error("Error storing user data:", error);
+    }
+  };
+
   const handleLogin = async () => {
-    Keyboard.dismiss(); // Dismiss the keyboard
+    Keyboard.dismiss();
     setErrorMessage("");
+
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
 
@@ -32,76 +81,101 @@ export default function Login() {
       return;
     }
 
-    setLoading(true);
-    try {
-      // Log the request payload for debugging
-      console.log("Sending request with payload:", { email: trimmedEmail, password: trimmedPassword });
+    // 👮 Admin login
+    if (trimmedEmail === "admin123@gmail.com" && trimmedPassword === "Admin123") {
+      await storeUserData(trimmedEmail);
+      Alert.alert("Admin Login", "Welcome Admin!");
+      router.replace("/adminDashboard");
+      return;
+    }
 
-      // Make API call to login
+    setLoading(true);
+
+    try {
       const response = await fetch("https://wastewise-app.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password: trimmedPassword,
+        }),
       });
 
-      // Log the response status and data for debugging
-      console.log("Response status:", response.status);
       const data = await response.json();
-      console.log("Response data:", data);
-
-      setLoading(false);
 
       if (response.ok) {
-        // Login successful
-        Alert.alert("Success", data.message || "Login successful!");
-        setTimeout(() => router.replace("/homepage"), 500); // Navigate to homepage after a delay
+        // Check payment status
+        const statusRes = await fetch(
+          `https://wastewise-app.onrender.com/api/payment/status?email=${trimmedEmail}`
+        );
+        const statusData = await statusRes.json();
+
+        const isPaid = statusData.status === "paid";
+
+        // Store data including payment status
+        await storeUserData(trimmedEmail, statusData._id, isPaid);
+
+        // Redirect based on status
+        router.replace(isPaid ? "/homepage" : "/nopayhomepage");
       } else {
-        // Login failed
-        if (data.message.includes("Invalid password")) {
-          setErrorMessage("Invalid password. Please try again.");
-        } else if (data.message.includes("Invalid email")) {
-          setErrorMessage("Invalid email. Please check and try again.");
-        } else {
-          setErrorMessage("Invalid credentials. Please try again.");
-        }
+        setErrorMessage(data.message || "Invalid credentials");
       }
     } catch (error) {
+      setErrorMessage("Network error. Please try again.");
+    } finally {
       setLoading(false);
-      setErrorMessage("Something went wrong. Please check your internet and try again.");
-      console.error("API Error:", error); // Log the error for debugging
     }
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.formContainer}>
-          <Text style={styles.title}>Login to <Text style={styles.brand}>WasteWise</Text></Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.formContainer}
+        >
+          <Text style={styles.title}>
+            Login to <Text style={styles.brand}>WasteWise</Text>
+          </Text>
+
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-          <TextInput 
-            style={styles.input} 
-            placeholder="Email" 
-            keyboardType="email-address" 
-            autoCapitalize="none" 
-            value={email} 
-            onChangeText={setEmail} 
-            placeholderTextColor="#666" 
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+            placeholderTextColor="#666"
           />
-          <TextInput 
-            style={styles.input} 
-            placeholder="Password" 
-            secureTextEntry 
-            value={password} 
-            onChangeText={setPassword} 
-            placeholderTextColor="#666" 
+
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            placeholderTextColor="#666"
           />
+
           <TouchableOpacity onPress={() => router.push("/forgotpassword")}>
             <Text style={styles.forgotPassword}>Forgot password?</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.loginButton, loading && styles.disabledButton]} onPress={handleLogin} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Login</Text>}
+
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.disabledButton]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>Login</Text>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push("/SignUpScreen")}> 
+
+          <TouchableOpacity onPress={() => router.push("/SignUpScreen")}>
             <Text style={styles.createAccount}>Create a new account</Text>
           </TouchableOpacity>
         </KeyboardAvoidingView>
@@ -111,68 +185,68 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#FFFFFF", 
-    justifyContent: "center", 
-    alignItems: "center" 
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  formContainer: { 
-    width: "85%" 
+  formContainer: {
+    width: "85%",
   },
-  title: { 
-    fontSize: 20, 
-    fontWeight: "600", 
-    marginBottom: 20, 
-    color: "#333", 
-    textAlign: "center" 
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 20,
+    color: "#333",
+    textAlign: "center",
   },
-  brand: { 
-    fontWeight: "bold", 
-    color: "#2E7D32" 
+  brand: {
+    fontWeight: "bold",
+    color: "#2E7D32",
   },
-  input: { 
-    width: "100%", 
-    height: 50, 
-    borderColor: "#DDD", 
-    borderWidth: 1, 
-    borderRadius: 25, 
-    paddingHorizontal: 15, 
-    marginBottom: 12, 
-    backgroundColor: "#F9F9F9" 
+  input: {
+    width: "100%",
+    height: 50,
+    borderColor: "#DDD",
+    borderWidth: 1,
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginBottom: 12,
+    backgroundColor: "#F9F9F9",
   },
-  forgotPassword: { 
-    color: "#2E7D32", 
-    fontSize: 14, 
-    textAlign: "center", 
-    marginBottom: 10 
+  forgotPassword: {
+    color: "#2E7D32",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 10,
   },
-  loginButton: { 
-    width: "100%", 
-    backgroundColor: "#2E7D32", 
-    paddingVertical: 15, 
-    borderRadius: 25, 
-    alignItems: "center", 
-    marginTop: 10 
+  loginButton: {
+    width: "100%",
+    backgroundColor: "#2E7D32",
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 10,
   },
-  disabledButton: { 
-    opacity: 0.7 
+  disabledButton: {
+    opacity: 0.7,
   },
-  loginButtonText: { 
-    color: "#FFFFFF", 
-    fontSize: 16, 
-    fontWeight: "bold" 
+  loginButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
-  createAccount: { 
-    color: "#2E7D32", 
-    fontSize: 14, 
-    textAlign: "center", 
-    marginTop: 10 
+  createAccount: {
+    color: "#2E7D32",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 10,
   },
-  errorText: { 
-    color: "red", 
-    fontSize: 14, 
-    textAlign: "center", 
-    marginBottom: 10 
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 10,
   },
 });

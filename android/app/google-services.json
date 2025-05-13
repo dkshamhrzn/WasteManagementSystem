@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "108664661771",
+    "project_id": "waste-wise-a8a9b",
+    "storage_bucket": "waste-wise-a8a9b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:108664661771:android:115f3fe8da1f249c5ca40e",
+        "android_client_info": {
+          "package_name": "sisir.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD31L7MKWNd1YYvfwRM79_xCIhh6TXpQmg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
