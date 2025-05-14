@@ -6,6 +6,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { useNavigation } from '@react-navigation/native';
@@ -59,8 +60,9 @@ export default function CreateScheduleScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back Icon */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Text style={styles.backButtonText}>← Back</Text>
+        <Image source={require('../assets/images/Back.png')} style={styles.backIcon} />
       </TouchableOpacity>
 
       <Text style={styles.heading}>Create New Schedule</Text>
@@ -132,10 +134,10 @@ const styles = StyleSheet.create({
     padding: 10,
     zIndex: 10,
   },
-  backButtonText: {
-    color: '#2E7D32',
-    fontSize: 16,
-    fontWeight: '600',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   heading: {
     fontSize: 18,
