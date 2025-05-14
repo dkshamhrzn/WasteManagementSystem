@@ -6,17 +6,16 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 
 export default function CreateScheduleScreen() {
+  const navigation = useNavigation();
   const [wasteType, setWasteType] = useState('Biodegradable');
   const [day, setDay] = useState('');
   const [time, setTime] = useState('');
   const [popupMessage, setPopupMessage] = useState('');
-  const router = useRouter();
 
   const handleSave = async () => {
     if (!day || !time) {
@@ -60,12 +59,8 @@ export default function CreateScheduleScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Image
-          source={require('../assets/images/Back.png')}
-          style={styles.backIcon}
-        />
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Text style={styles.backButtonText}>← Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.heading}>Create New Schedule</Text>
@@ -128,17 +123,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 50,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   backButton: {
     position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
+    top: 10,
+    left: 15,
+    padding: 10,
+    zIndex: 10,
   },
-  backIcon: {
-    width: 30,
-    height: 30,
-    resizeMode: 'contain',
+  backButtonText: {
+    color: '#2E7D32',
+    fontSize: 16,
+    fontWeight: '600',
   },
   heading: {
     fontSize: 18,
