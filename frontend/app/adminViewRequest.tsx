@@ -181,7 +181,7 @@ const AdminViewRequest = () => {
                 style={styles.approveButton}
                 onPress={() =>
                   router.push({
-                    pathname: '/AdminSendPickupNotice',
+                    pathname: '/adminSendPickupNotice',
                     params: { id: request._id },
                   })
                 }
