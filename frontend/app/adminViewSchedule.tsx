@@ -15,8 +15,6 @@ import {
 import RNPickerSelect from 'react-native-picker-select';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import adminViewallSchedule from './adminViewallSchedule';
-
 
 export default function ViewScheduleScreen() {
   const [selectedType, setSelectedType] = useState('Biodegradable');
@@ -65,12 +63,6 @@ export default function ViewScheduleScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Image
-            source={require('../assets/images/Back.png')}
-            style={styles.backIcon}
-          />
-        </TouchableOpacity>
         <Text style={styles.heading}>View Schedule</Text>
       </View>
 
@@ -184,13 +176,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingTop: 50,
     paddingBottom: 20,
-    paddingHorizontal: 10,
-    alignSelf: 'flex-start',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  heading: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1b5e20',
+  },
+  
   backButton: {
     marginRight: 10,
   },
@@ -199,11 +196,7 @@ const styles = StyleSheet.create({
     height: 38,
     resizeMode: 'contain',
   },
-  heading: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b5e20',
-  },
+ 
   card: {
     backgroundColor: '#e3f2e1',
     borderRadius: 16,
