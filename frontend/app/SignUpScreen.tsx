@@ -22,7 +22,6 @@ const SignUpScreen = () => {
   const [address, setAddress] = useState("");
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(false);
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validatePhone = (phone: string) => /^\d{10}$/.test(phone);
@@ -35,7 +34,7 @@ const SignUpScreen = () => {
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
       const data = await response.json();
-      setAddressSuggestions(data.map((item: { display_name: any; }) => item.display_name));
+      setAddressSuggestions(data.map((item: { display_name: any }) => item.display_name));
     } catch (error) {
       console.error("Error fetching address suggestions:", error);
     }
@@ -58,7 +57,6 @@ const SignUpScreen = () => {
     }
 
     setLoading(true);
-    setProgress(true);
 
     try {
       const requestBody = JSON.stringify({
@@ -67,7 +65,7 @@ const SignUpScreen = () => {
         phone_number: phone,
         password,
         address,
-        role_name: "user", // default user role
+        role_name: "user",
       });
 
       const response = await fetch("https://wastewise-app.onrender.com/signup", {
@@ -78,18 +76,16 @@ const SignUpScreen = () => {
 
       const data = await response.json();
       setLoading(false);
-      setProgress(false);
 
       if (response.ok) {
         Alert.alert("Success", "Signup complete! Redirecting to home...", [
-          { text: "OK", onPress: () => router.push("/login") }, // Navigate to the login page
+          { text: "OK", onPress: () => router.push("/homepage") },
         ]);
       } else {
         Alert.alert("Error", data.message || "Signup failed");
       }
     } catch (error) {
       setLoading(false);
-      setProgress(false);
       Alert.alert("Error", "Something went wrong. Please try again.");
     }
   };
@@ -97,7 +93,6 @@ const SignUpScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        {/* Removed LinearGradient, now using solid white background */}
         <View style={styles.formContainer}>
           <Text style={styles.title}>
             Signup to <Text style={styles.brand}>WasteWise</Text>
@@ -134,7 +129,6 @@ const SignUpScreen = () => {
             onChangeText={setPassword}
             placeholderTextColor="#666"
           />
-
           <TextInput
             style={styles.input}
             placeholder="Address"
@@ -176,8 +170,6 @@ const SignUpScreen = () => {
             )}
           </TouchableOpacity>
 
-          {progress && <ActivityIndicator size="large" color="#2E7D32" style={styles.progressIndicator} />}
-
           <TouchableOpacity onPress={() => router.push("/login")} style={styles.createAccount}>
             <Text>
               Already have an account? <Text style={styles.forgotPassword}>Login</Text>
@@ -189,11 +181,10 @@ const SignUpScreen = () => {
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF", // Solid white background
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -266,9 +257,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#CCC",
-  },
-  progressIndicator: {
-    marginTop: 10,
   },
 });
 
