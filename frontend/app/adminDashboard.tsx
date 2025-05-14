@@ -12,16 +12,16 @@ export default function AdminDashboard() {
 
       <View style={styles.row}>
         <View style={styles.card}>
-          <Image source={require('../assets/images/Delivery.png')} style={styles.icon} />
+          <Image source={require('../assets/images/Clock2.png')} style={styles.icon} />
           <TouchableOpacity style={styles.button} onPress={() => router.push('/adminManageSchedule')}>
             <Text style={styles.buttonText}>Manage schedule</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.card}>
-          <Image source={require('../assets/images/Clock.png')} style={styles.icon} />
-          <TouchableOpacity style={styles.button} onPress={() => router.push('/pickuprequest')}>
-            <Text style={styles.buttonText}>Pickup Request</Text>
+          <Image source={require('../assets/images/Delivery.png')} style={styles.icon} />
+          <TouchableOpacity style={styles.button} onPress={() => router.push('/adminViewRequest')}>
+            <Text style={styles.buttonText}>Pickup request</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -29,21 +29,16 @@ export default function AdminDashboard() {
       <View style={styles.row}>
         <View style={styles.cardSingle}>
           <Image source={require('../assets/images/Bar.png')} style={styles.icon} />
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Statistics</Text>
+          <TouchableOpacity style={styles.button} onPress={() => router.push('/adminViewAllUser')}>
+            <Text style={styles.buttonText}>View User</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Bottom Navbar */}
-      <View style={styles.navbar}>
-        <Text style={styles.navbarText}>Admin Panel</Text>
-      </View>
+      
     </View>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -118,16 +113,26 @@ const styles = StyleSheet.create({
   },
   navbar: {
     backgroundColor: '#E8F5E9',
-    height: 60,
+    height: 70,
     width: '100%',
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,
   },
+  navItem: {
+    alignItems: 'center',
+  },
+  navIcon: {
+    width: 30,
+    height: 30,
+    marginBottom: 4,
+    resizeMode: 'contain',
+  },
   navbarText: {
     color: '#2E7D32',
-    fontWeight: '600',
-    fontSize: 16,
+    fontWeight: '500',
+    fontSize: 12,
   },
 });
