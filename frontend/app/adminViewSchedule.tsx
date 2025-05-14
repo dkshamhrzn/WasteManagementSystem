@@ -15,12 +15,14 @@ import {
 import RNPickerSelect from 'react-native-picker-select';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import { useNavigation } from '@react-navigation/native';
 
 export default function ViewScheduleScreen() {
   const [selectedType, setSelectedType] = useState('Biodegradable');
   const [filteredSchedules, setFilteredSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const navigation = useNavigation();
 
   const handleView = async () => {
     setLoading(true);
@@ -52,15 +54,23 @@ export default function ViewScheduleScreen() {
 
   const copyToClipboard = (text: string) => {
     Clipboard.setStringAsync(text);
-    if (Platform.OS === "android") {
-      ToastAndroid.show("ID copied to clipboard!", ToastAndroid.SHORT);
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('ID copied to clipboard!', ToastAndroid.SHORT);
     } else {
-      Alert.alert("Copied", "ID copied to clipboard!");
+      Alert.alert('Copied', 'ID copied to clipboard!');
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back Button with Image */}
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Image
+          source={require('../assets/images/Back.png')}
+          style={styles.backIcon}
+        />
+      </TouchableOpacity>
+
       {/* Header */}
       <View style={styles.headerContainer}>
         <Text style={styles.heading}>View Schedule</Text>
@@ -175,6 +185,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
   },
+  backButton: {
+    position: 'absolute',
+    top: 10,
+    left: 15,
+    padding: 10,
+    zIndex: 10,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerContainer: {
     paddingTop: 50,
     paddingBottom: 20,
@@ -187,16 +209,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1b5e20',
   },
-  
-  backButton: {
-    marginRight: 10,
-  },
-  backIcon: {
-    width: 38,
-    height: 38,
-    resizeMode: 'contain',
-  },
- 
   card: {
     backgroundColor: '#e3f2e1',
     borderRadius: 16,
