@@ -12,7 +12,7 @@ export default function AdminDashboard() {
 
       <View style={styles.row}>
         <View style={styles.card}>
-          <Image source={require('../assets/images/Clock2.png')} style={styles.icon} />
+          <Image source={require('../assets/images/Clock.png')} style={styles.icon} />
           <TouchableOpacity style={styles.button} onPress={() => router.push('/adminManageSchedule')}>
             <Text style={styles.buttonText}>Manage schedule</Text>
           </TouchableOpacity>
