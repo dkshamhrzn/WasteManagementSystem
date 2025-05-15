@@ -91,7 +91,21 @@ export default function ProfileEdit() {
     );
 
     const result = await response.json();
+
     if (response.ok) {
+      // ✅ Save updated data locally
+      try {
+        await SecureStore.setItemAsync('userFullName', fullName);
+        await SecureStore.setItemAsync('userPhoneNumber', phoneNumber);
+        await SecureStore.setItemAsync('userAddress', location);
+
+        await AsyncStorage.setItem('userFullName', fullName);
+        await AsyncStorage.setItem('userPhoneNumber', phoneNumber);
+        await AsyncStorage.setItem('userAddress', location);
+      } catch (storageError) {
+        console.warn('Warning: Failed to update local storage:', storageError);
+      }
+
       Alert.alert('Success', 'Profile updated successfully.');
       router.back();
     } else {
@@ -101,6 +115,7 @@ export default function ProfileEdit() {
     Alert.alert('Error', error.message || 'Update failed.');
   }
 };
+
 
 
   const handleDeleteAccount = () => {

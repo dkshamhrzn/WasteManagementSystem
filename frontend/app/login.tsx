@@ -23,35 +23,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // 🔁 Auto login check
-  useEffect(() => {
-    const checkLogin = async () => {
-      const storedEmail = await SecureStore.getItemAsync("userEmail");
-      if (storedEmail) {
-        try {
-          const statusRes = await fetch(
-            `https://wastewise-app.onrender.com/api/payment/status?email=${storedEmail}`
-          );
-          const statusData = await statusRes.json();
-
-          const isPaid = statusData.status === "paid";
-          await SecureStore.setItemAsync("isPaid", isPaid ? "true" : "false");
-
-          if (isPaid) {
-            router.replace("/homepage");
-          } else {
-            router.replace("/nopayhomepage");
-          }
-        } catch (error) {
-          console.log("Auto login failed", error);
-        }
-      }
-    };
-
-    checkLogin();
-  }, []);
-
-  // 🗂 Store user data securely
+ // 🗂 Store user data securely
   const storeUserData = async (email: string, userId?: string, isPaid?: boolean) => {
     try {
       await SecureStore.setItemAsync("userEmail", email);
@@ -79,7 +51,7 @@ export default function Login() {
       return;
     }
 
-    // 👮 Admin login
+    // 👮 Admin login hard coded with Email and password
     if (trimmedEmail === "admin123@gmail.com" && trimmedPassword === "Admin123") {
       await storeUserData(trimmedEmail);
       Alert.alert("Admin Login", "Welcome Admin!");

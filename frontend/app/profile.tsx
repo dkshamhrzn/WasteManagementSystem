@@ -12,6 +12,7 @@ import {
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState<{
@@ -26,31 +27,72 @@ const ProfileScreen = () => {
   const [isPaid, setIsPaid] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const getCurrentUser = async () => {
+  const getCurrentUser = async () => {
+    try {
+      const email =
+        (await SecureStore.getItemAsync('userEmail')) ||
+        (await AsyncStorage.getItem('userEmail'));
+
+      const paid = await SecureStore.getItemAsync('isPaid');
+      setIsPaid(paid === 'true');
+
+      if (email) {
+        setUserEmail(email);
+
+        // ✅ Load locally saved profile data first
+        const fullName =
+          (await SecureStore.getItemAsync('userFullName')) ||
+          (await AsyncStorage.getItem('userFullName'));
+
+        const phone =
+          (await SecureStore.getItemAsync('userPhoneNumber')) ||
+          (await AsyncStorage.getItem('userPhoneNumber'));
+
+        const address =
+          (await SecureStore.getItemAsync('userAddress')) ||
+          (await AsyncStorage.getItem('userAddress'));
+
+        setProfile({
+          full_name: fullName || '',
+          email: email,
+          phone_number: phone || '',
+          address: address || '',
+        });
+
+        // ✅ Fetch fresh data in background (to update if needed)
+        await fetchProfile(email);
+      } else {
+        router.replace('/login');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      router.replace('/login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  getCurrentUser();
+}, []);
+useFocusEffect(
+  React.useCallback(() => {
+    const refreshProfile = async () => {
       try {
         const email =
           (await SecureStore.getItemAsync('userEmail')) ||
           (await AsyncStorage.getItem('userEmail'));
-
-        const paid = await SecureStore.getItemAsync('isPaid');
-        setIsPaid(paid === 'true');
-
         if (email) {
-          setUserEmail(email);
           await fetchProfile(email);
-        } else {
-          router.replace('/login');
         }
       } catch (error) {
-        console.error('Error:', error);
-        router.replace('/login');
-      } finally {
-        setLoading(false);
+        console.error('Error refreshing profile:', error);
       }
     };
 
-    getCurrentUser();
-  }, []);
+    refreshProfile();
+  }, [])
+);
+
 
   const fetchProfile = async (email: string) => {
     try {
