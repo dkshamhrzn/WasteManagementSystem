@@ -78,7 +78,7 @@ const SignUpScreen = () => {
       setLoading(false);
 
       if (response.ok) {
-        Alert.alert("Success", "Signup complete! Redirecting to home...", [
+        Alert.alert("Success", "Signup complete! Redirecting to Login...", [
           { text: "OK", onPress: () => router.push("/homepage") },
         ]);
       } else {

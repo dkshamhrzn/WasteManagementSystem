@@ -79,22 +79,33 @@ const PaymentScreen = () => {
     }
   };
 
-  const navigateHome = () => {
-  if (isPaid) {
-    router.push("/homepage");
-  } else {
-    router.push("/nopayhomepage");
-  }
-};
+  const handleExtraServicePayment = () => {
+    Linking.openURL("https://wastewise-app.onrender.com/generalpayment");
+  };
 
+  const navigateHome = () => {
+    if (isPaid) {
+      router.push("/homepage");
+    } else {
+      router.push("/nopayhomepage");
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.center}>
         {isPaid ? (
-          <Text style={styles.message}>
-            ✅ You’ve already completed the payment!
-          </Text>
+          <View style={styles.paidContainer}>
+            <Text style={styles.message}>
+              ✅ You've already completed the payment!
+            </Text>
+            <TouchableOpacity 
+              onPress={handleExtraServicePayment} 
+              style={[styles.button, styles.extraServiceButton]}
+            >
+              <Text style={styles.buttonText}>Extra Service Payment</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <>
             <Text style={styles.message}>💰 Payment Required</Text>
@@ -162,6 +173,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
+  paidContainer: {
+    alignItems: 'center',
+  },
   message: {
     fontSize: 18,
     color: "#000",
@@ -172,6 +186,10 @@ const styles = StyleSheet.create({
     backgroundColor: "green",
     padding: 15,
     borderRadius: 10,
+    marginVertical: 10,
+  },
+  extraServiceButton: {
+    backgroundColor: "green",
   },
   buttonText: {
     color: "#fff",

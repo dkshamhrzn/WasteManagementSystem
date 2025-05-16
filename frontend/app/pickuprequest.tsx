@@ -134,63 +134,65 @@ const RequestPickupScreen = () => {
   };
 
   // Submits the pickup request to the server after confirmation
-  const submitPickupRequest = async () => {
-    if (!validateForm()) {
-      Alert.alert("Invalid Input", "Please correct the highlighted fields.");
-      return;
-    }
+  // Replace the submitPickupRequest function with this updated version
+const submitPickupRequest = async () => {
+  if (!validateForm()) {
+    Alert.alert("Invalid Input", "Please correct the highlighted fields.");
+    return;
+  }
 
-    // Confirm before proceeding with paid service
-    Alert.alert(
-      "Paid Service",
-      "This is a paid service. Do you want to proceed to payment?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes",
-          onPress: async () => {
-            const preferredDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-            const preferredTime = `${hour.padStart(2, "0")}:${minute.padStart(2, "0")} ${ampm}`;
+  // Confirm before proceeding with paid service
+  Alert.alert(
+    "Paid Service",
+    "This is a paid service. Do you want to proceed with the pickup request?",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Yes",
+        onPress: async () => {
+          const preferredDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+          const preferredTime = `${hour.padStart(2, "0")}:${minute.padStart(2, "0")} ${ampm}`;
 
-            const payload = {
-              waste_type: wasteType,
-              quantity,
-              location,
-              preferred_date: preferredDate,
-              preferred_time: preferredTime,
-              notes,
-              user_email: email,
-            };
+          const payload = {
+            waste_type: wasteType,
+            quantity,
+            location,
+            preferred_date: preferredDate,
+            preferred_time: preferredTime,
+            notes,
+            user_email: email,
+          };
 
-            setIsSubmitting(true);
-            try {
-              const response = await fetch("https://wastewise-app.onrender.com/request-pickup", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-              });
+          setIsSubmitting(true);
+          try {
+            const response = await fetch("https://wastewise-app.onrender.com/request-pickup", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
 
-              if (!response.ok) throw new Error("Failed to submit pickup request");
+            if (!response.ok) throw new Error("Failed to submit pickup request");
 
-              // Clear form and refresh status list
-              resetForm();
-              fetchPickupStatus(email);
+            // Clear form and refresh status list
+            resetForm();
+            fetchPickupStatus(email);
 
-              // Redirect user to payment page
-              router.replace("https://wastewise-app.onrender.com/generalpayment");
-            } catch (error) {
-              console.error("Submit failed:", error);
-              Alert.alert("Error", "Failed to submit pickup request.");
-            } finally {
-              setIsSubmitting(false);
-            }
-          },
+            Alert.alert(
+              "Success", 
+              "Your pickup request has been sent to the admin. You'll receive a confirmation soon."
+            );
+          } catch (error) {
+            console.error("Submit failed:", error);
+            Alert.alert("Error", "Failed to submit pickup request.");
+          } finally {
+            setIsSubmitting(false);
+          }
         },
-      ],
-      { cancelable: true }
-    );
-  };
-
+      },
+    ],
+    { cancelable: true }
+  );
+};
   // Resets all form inputs to default state
   const resetForm = () => {
     setWasteType("");

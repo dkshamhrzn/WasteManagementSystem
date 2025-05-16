@@ -177,7 +177,7 @@ export default function ProfileEdit() {
         <View style={styles.card}>
           <View style={styles.profileImageWrapper}>
             <Image
-              source={{ uri: 'https://i.imgur.com/MK3eW3As.jpg' }}
+              source={{ uri: 'https://www.gravatar.com/avatar/?d=mp' }}
               style={styles.profileImage}
             />
             <Image
